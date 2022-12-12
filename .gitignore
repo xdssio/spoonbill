@@ -818,3 +818,5 @@ cython_debug/
 
 !/playgrounds/
 /.idea
+/.DS_Store
+.DS_Store
