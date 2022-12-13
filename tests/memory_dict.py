@@ -1,8 +1,8 @@
-from spoonbill import MemoryKeyStore, MemoryStringStore
+from spoonbill import Dict, StringDict
 
 
 def test_memory_store():
-    store = MemoryKeyStore()
+    store = Dict()
     assert store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -29,7 +29,7 @@ def test_memory_store():
 
 
 def test_memory_string_store():
-    store = MemoryStringStore()
+    store = StringDict()
     assert store._flush()
     store['test'] = 'test'
     assert len(store) == 1
