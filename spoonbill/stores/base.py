@@ -21,9 +21,11 @@ def to_float(f):
 
 class KeyValueBase:
     _store: typing.Any = None
+    as_strings: bool = False
 
-    def __init__(self, store):
+    def __init__(self, store: typing.Any, string_keys: bool = False):
         self._store = store
+        self.as_strings = string_keys
 
     def __getitem__(self, item):
         return self._store[item]
@@ -35,7 +37,7 @@ class KeyValueBase:
         raise NotImplementedError
 
     def __iter__(self):
-        return self
+        return iter(self.keys())
 
     def __next__(self):
         for key in self.keys():
@@ -91,46 +93,17 @@ class KeyValueBase:
             if pattern.match(str(key)):
                 yield key
 
-
-class CloudpickleEncoder(object):
-
     @staticmethod
     def encode(value):
         return str(cloudpickle.dumps(value))
 
     @staticmethod
     def decode(value):
-        if value:
+        if value is not None:
             return cloudpickle.loads(eval(value))
 
-    def _pre_key(self, value):
-        return self.encode(value)
 
-    def _post_key(self, value):
-        return self.decode(value)
-
-    def _pre_value(self, value):
-        return self.encode(value)
-
-    def _post_value(self, value):
-        return self.decode(value)
-
-
-class JsonEncoder(object):
-    def _pre_key(self, value):
-        return value.encode("utf-8")
-
-    def _post_key(self, value):
-        return value.decode("utf-8")
-
-    def _pre_value(self, value):
-        return json.dumps(value).encode("utf-8")
-
-    def _post_value(self, value):
-        return json.loads(value.decode("utf-8"))
-
-
-class Dict(KeyValueBase):
+class InMemoryDict(KeyValueBase):
     """
     A key-value store that stores everything in memory.
     Practically a python dictionary
@@ -141,14 +114,14 @@ class Dict(KeyValueBase):
 
     @classmethod
     def from_dict(cls, d: dict):
-        return Dict(d)
+        return InMemoryDict(d)
 
     @classmethod
     def from_json(cls, j):
-        return Dict(json.loads(j))
+        return InMemoryDict(json.loads(j))
 
     def set(self, key, value):
-        self[key] = value
+        self._store[key] = value
         return True
 
     def _flush(self):
@@ -180,19 +153,3 @@ class Dict(KeyValueBase):
             pattern = re.compile(pattern)
             return {key for key in self._store.keys() if pattern.match(str(key))}
         return iter(self._store.keys())
-
-
-class StringDict(Dict):
-
-    def __getitem__(self, item):
-        return self._store[str(item)]
-
-    def __setitem__(self, key, value):
-        self._store[str(key)] = str(value)
-
-    def get(self, key, default=None):
-        return self._store.get(str(key), default)
-
-    def set(self, key, value):
-        self._store[str(key)] = str(value)
-        return True
