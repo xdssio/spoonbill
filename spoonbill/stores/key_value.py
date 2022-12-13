@@ -25,6 +25,9 @@ def to_float(f):
 class KeyStore:
     _store: typing.Any = None
 
+    def __init__(self, store):
+        self._store = store
+
     def __getitem__(self, item):
         return self._store[item]
 
@@ -35,7 +38,19 @@ class KeyStore:
         raise NotImplementedError
 
     def __iter__(self):
-        return iter(self._store)
+        return self
+
+    def __next__(self):
+        for key in self.keys():
+            yield key
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for key, value in self.items():
+            if other.get(key) != value:
+                return False
+        return True
 
     def keys(self, *args, **kwargs):
         return self._store.keys(*args, **kwargs)
@@ -58,21 +73,6 @@ class KeyStore:
     def update(self, d):
         self._store.update(d)
         return self
-
-
-class MemoryKeyStore(dict, KeyStore):
-    """
-    A key-value store that stores everything in memory.
-    Practically a python dictionary
-    """
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return MemoryKeyStore(d)
-
-    @classmethod
-    def from_json(cls, j):
-        return MemoryKeyStore(json.loads(j))
 
 
 class LmdbStore(KeyStore):
@@ -103,10 +103,79 @@ class ShelveStore(KeyStore):
         self._store = shelve.open(db_path, 'c')
 
 
-class RedisDict(KeyStore):
+class MemoryKeyStore(KeyStore):
+    """
+    A key-value store that stores everything in memory.
+    Practically a python dictionary
+    """
 
-    def __init__(self, store):
-        self._store = store
+    def __init__(self, store: dict = None):
+        self._store = store or {}
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return MemoryKeyStore(d)
+
+    @classmethod
+    def from_json(cls, j):
+        return MemoryKeyStore(json.loads(j))
+
+    def set(self, key, value):
+        self[key] = value
+        return True
+
+    def _flush(self):
+        self._store = {}
+        return True
+
+    def update(self, d):
+        self._store.update(d)
+        return self
+
+    def __len__(self):
+        return len(self._store)
+
+    def items(self):
+        return self._store.items()
+
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
+    def __repr__(self):
+        size = len(self)
+        items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
+                :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
+        return f"MemoryDict() of size {size}\n{items}"
+
+    def get_batch(self, keys, default=None):
+        for key in keys:
+            yield self.get(key, default)
+
+    def set_batch(self, keys, values):
+        for key, value in zip(keys, values):
+            self.set(key, value)
+
+        return True
+
+
+class MemoryStringStore(MemoryKeyStore):
+
+    def __getitem__(self, item):
+        return self._store[str(item)]
+
+    def __setitem__(self, key, value):
+        self._store[str(key)] = str(value)
+
+    def get(self, key, default=None):
+        return self._store.get(str(key), default)
+
+    def set(self, key, value):
+        self._store[str(key)] = str(value)
+        return True
+
+
+class RedisDict(KeyStore):
 
     def __len__(self):
         return self._store.dbsize()
@@ -152,14 +221,6 @@ class RedisDict(KeyStore):
 
     def __delitem__(self, key):
         return self._store.delete(self.encode(key))
-
-    def __eq__(self, other):
-        if len(self) != len(other):
-            return False
-        for key, value in self.items():
-            if other.get(key) != value:
-                return False
-        return True
 
     def pop(self, item, default=None):
         key = self.encode(item)
@@ -249,10 +310,6 @@ class RedisDict(KeyStore):
         items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
                 :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
         return f"RedisStore(host={self.host}, port={self.port}, db={self.db}) of size {size}\n{items}"
-
-    def __iter__(self):
-        for key in self.keys():
-            yield key
 
 
 class RedisStringDict(RedisDict):
