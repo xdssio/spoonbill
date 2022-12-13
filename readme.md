@@ -24,21 +24,81 @@ For each key-value store, there are two classes:
 
 * For scan operations, you need to use a keys as strings.
 
-| operation | MemoryDict | MemoryStringDict | RedisDict | RedisStringDict | DynamoDB | Datastore | MongoDB |
-|-----------|------------|------------------|-----------|-----------------|----------|-----------|---------|
-| set       | √          | √                | √         | √               |          |           |         | 
-| get       | √          | √                | √         | √               |          |           |         |
-| pop       | √          | √                | √         | √               |          |           |         |
-| delete    | √          | √                | √         | √               |          |           |         |
-| len       | √          | √                | √         | √               |          |           |         |
-| eq        | √          | √                | √         | √               |          |           |         |
-| keys      | √          | √                | √         | √               |          |           |         |
-| values    | √          | √                | √         | √               |          |           |         |
-| items     | √          | √                | √         | √               |          |           |         |
-| iter      | √          | √                | √         | √               |          |           |         |
-| contains  | √          | √                | √         | √               |          |           |         |
-| update    | √          | √                | √         | √               |          |           |         |
-| get_batch | √          | √                | √         | √               |          |           |         |
-| set_batch | √          | √                | √         | √               |          |           |         |
-| scan      | √          | √                | X         | √               |          |           |         |
+| operation   | InMemoryDict | RedisDict | LmdbDict | DynamoDB | Datastore | MongoDB |
+|-------------|--------------|-----------|----------|----------|-----------|---------|
+| set         | √            | √         | √        |          |           |         | 
+| get         | √            | √         | √        |          |           |         |
+| pop         | √            | √         | √        |          |           |         |
+| delete      | √            | √         | √        |          |           |         |
+| len         | √            | √         | √        |          |           |         |
+| eq          | √            | √         | √        |          |           |         |
+| keys        | √            | √         | √        |          |           |         |
+| values      | √            | √         | √        |          |           |         |
+| items       | √            | √         | √        |          |           |         |
+| iter        | √            | √         | √        |          |           |         |
+| contains    | √            | √         | √        |          |           |         |
+| update      | √            | √         | √        |          |           |         |
+| get_batch   | √            | √         | √        |          |           |         |
+| set_batch   | √            | √         | √        |          |           |         |
+| scan        | √            | √         | √        |          |           |         |
+| persistence | X            | √         | √        |          |           |         |
+
+## Usage
+
+### InMemoryDict
+
+This object is to have a common interface for all the key-value stores. It is great for testing and for the average use
+case, to have a common interface which includes the scan operation.
+
+* When using scan, the keys are evaluated as strings to match with the pattern.
+
+```python
+from spoonbill import InMemoryDict
+
+store = InMemoryDict.open() # or InMemoryDict()
+store["key"] = "value"
+assert store["key"] == "value"
+assert list(store.scan("key*")) == ["key"]
+``` 
+### LmdbDict
+LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library. It is a fast key-value with memory-mapped persistence
+```pip install lmdbm```
+
+```python
+from spoonbill import LmdbDict
+
+store = LmdbDict.open('tmp.db')
+store["key"] = "value"
+assert store["key"] == "value"
+assert list(store.scan("key*")) == ["key"]
+
+```
+### RedisDict
+
+As default, the RedisDict act as a python dict, encode every key and value to bytes using cloudpickle. This allows to
+store any python object, but it is not efficient for scan operations. It also make the scan a bit unstable as only
+string keys are supported.
+
+The *as_string* parameter allows to store the keys and values as strings (default redis), which allows for efficient
+scan operations.
+
+```python
+from spoonbill import RedisDict
+
+store = RedisDict.from_url("redis://localhost:6379/1")
+store[1] = lambda x: x + 1  # anything goes using cloudpickle
+assert store[1](1) == 2
+
+store.update({'1': 1, '11': 1, 1: -1, 11: -1})
+assert list(store.scan('1*')) == ['1', '11']  # because scan apply only on string keys
+
+# set as_string to True to use redis with its default behaviour which turns keys and values to strings
+store = RedisDict.from_url("redis://localhost:6379/1", as_strings=True)
+store[1] = 1
+assert store[1] == store["1"] == "1"
+
+store.update({'1': 1, '11': 1, 111: -111})
+assert list(store.scan('1*')) == ['111', '1', '11']  # redis turn every key to string
+```
+
 
