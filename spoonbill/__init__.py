@@ -1,6 +1,7 @@
 import contextlib
 
-from spoonbill.stores.base import InMemoryDict
+from spoonbill.stores.inmemory import InMemoryDict
+from spoonbill.stores.shelve import ShelveStore
 
 with contextlib.suppress(ImportError):
     from spoonbill.stores.redis import RedisDict

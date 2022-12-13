@@ -1,58 +1,73 @@
+import contextlib
 import json
+import pathlib
+import os
 import lmdbm
 import cloudpickle
 from spoonbill.stores.base import KeyValueBase
+import shutil
+
+
+class CloudpickleEncoder(lmdbm.Lmdb):
+    @staticmethod
+    def encode(value):
+        return cloudpickle.dumps(value)
+
+    @staticmethod
+    def decode(value):
+        if value:
+            return cloudpickle.loads(value)
+
+    def _pre_key(self, value):
+        return self.encode(value)
+
+    def _post_key(self, value):
+        return self.decode(value)
+
+    def _pre_value(self, value):
+        return self.encode(value)
+
+    def _post_value(self, value):
+        return self.decode(value)
 
 
 class LmdbDict(KeyValueBase):
 
-    @classmethod
-    def from_db(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True):
-        class CloudpickleEncoder(lmdbm.Lmdb):
-            @staticmethod
-            def encode(value):
-                return cloudpickle.dumps(value)
+    def __init__(self, store, db_path):
+        self._store = store
+        self.db_path = db_path
 
-            @staticmethod
-            def decode(value):
-                if value:
-                    return cloudpickle.loads(value)
+    @property
+    def map_size(self):
+        return self._store.map_size
 
-            def _pre_key(self, value):
-                return self.encode(value)
+    @property
+    def autogrow(self):
+        return self._store.autogrow
 
-            def _post_key(self, value):
-                return self.decode(value)
+    def set(self, key, value):
+        self._store[key] = value
+        return True
 
-            def _pre_value(self, value):
-                return self.encode(value)
+    def items(self):
+        for key in self.keys():
+            yield key, self[key]
 
-            def _post_value(self, value):
-                return self.decode(value)
-
-        return LmdbDict(CloudpickleEncoder.open(db_path, flag=flag, mode=mode, map_size=map_size, autogrow=autogrow))
-
-
-class LmdbStringDict(KeyValueBase):
+    def _flush(self):
+        map_size, autogrow = self.map_size, self.autogrow
+        with contextlib.suppress(FileNotFoundError):
+            shutil.rmtree(self.db_path)
+        self._store = CloudpickleEncoder.open(self.db_path, flag="c", mode=0o755, map_size=map_size, autogrow=autogrow)
+        return True
 
     @classmethod
     def from_db(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True):
-        class JsonLmdb(lmdbm.Lmdb):
-            def _pre_key(self, value):
-                return value.encode("utf-8")
+        return LmdbDict(
+            store=CloudpickleEncoder.open(db_path, flag=flag, mode=mode, map_size=map_size, autogrow=autogrow),
+            db_path=db_path)
 
-            def _post_key(self, value):
-                return value.decode("utf-8")
+    def set_batch(self, keys, values):
+        self.update(zip(keys, values))
+        return True
 
-            def _pre_value(self, value):
-                return json.dumps(value).encode("utf-8")
-
-            def _post_value(self, value):
-                return json.loads(value.decode("utf-8"))
-
-        return LmdbStringDict(JsonLmdb.open(db_path, flag=flag, mode=mode, map_size=map_size, autogrow=autogrow))
-
-d = LmdbDict.from_db("tmp/test.db")
-d["test"] = "test"
-d
-d.scan('t*')
+    open = from_db

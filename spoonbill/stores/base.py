@@ -34,7 +34,7 @@ class KeyValueBase:
         self._store[key] = value
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self._store)
 
     def __iter__(self):
         return iter(self.keys())
@@ -102,54 +102,55 @@ class KeyValueBase:
         if value is not None:
             return cloudpickle.loads(eval(value))
 
-
-class InMemoryDict(KeyValueBase):
-    """
-    A key-value store that stores everything in memory.
-    Practically a python dictionary
-    """
-
-    def __init__(self, store: dict = None):
-        self._store = store or {}
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return InMemoryDict(d)
-
-    @classmethod
-    def from_json(cls, j):
-        return InMemoryDict(json.loads(j))
-
-    def set(self, key, value):
-        self._store[key] = value
-        return True
-
-    def _flush(self):
-        self._store = {}
-        return True
-
-    def update(self, d):
-        self._store.update(d)
-        return self
-
-    def __len__(self):
-        return len(self._store)
-
-    def items(self):
-        return self._store.items()
-
-    def __iter__(self):
-        for key in self.keys():
-            yield key
-
     def __repr__(self):
         size = len(self)
         items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
                 :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
-        return f"MemoryDict() of size {size}\n{items}"
+        return f"{self.__class__.__name__}() of size {size}\n{items}"
 
-    def keys(self, pattern: str = None, *args, **kwargs):
-        if pattern:
-            pattern = re.compile(pattern)
-            return {key for key in self._store.keys() if pattern.match(str(key))}
-        return iter(self._store.keys())
+
+class ContextStoreBase(KeyValueBase):
+    store_path: str = None
+    manager: typing.Any = None
+
+    def __getitem__(self, item):
+        with self.manager.open(self.store_path) as store:
+            return store[item]
+
+    def __setitem__(self, key, value):
+        with self.manager.open(self.store_path) as store:
+            store[key] = value
+
+    def __contains__(self, item):
+        with self.manager.open(self.store_path) as store:
+            return item in store
+
+    def __len__(self):
+        with self.manager.open(self.store_path) as store:
+            return len(store)
+
+    def keys(self, *args, **kwargs):
+        with self.manager.open(self.store_path) as store:
+            for key in store.keys(*args, **kwargs):
+                yield key
+
+    def values(self, *args, **kwargs):
+        with self.manager.open(self.store_path) as store:
+            for value in store.values(*args, **kwargs):
+                yield value
+
+    def items(self, *args, **kwargs):
+        with self.manager.open(self.store_path) as store:
+            for item in store.items(*args, **kwargs):
+                yield item
+
+    def get(self, key, default=None):
+        with self.manager.open(self.store_path) as store:
+            if key in store:
+                return store[key]
+        return default
+
+    def set(self, key, value):
+        with self.manager.open(self.store_path) as store:
+            store[key] = value
+        return True

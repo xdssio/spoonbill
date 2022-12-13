@@ -51,12 +51,16 @@ class RedisDict(KeyValueBase):
             return key
         return self.encode(key)
 
+    @staticmethod
+    def _is_encoded(value):
+        return str(value)[:2] == "b'"
+
     def decode_key(self, key):
         if self.as_strings:
             return key
-        elif str(key)[:2] != "'b":
-            return key
-        return self.decode(key)
+        elif self._is_encoded(key):
+            return self.decode(key)
+        return key
 
     def encode_value(self, value):
         if self.as_strings:  # let redis handle the encoding
@@ -161,15 +165,11 @@ class RedisDict(KeyValueBase):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
         return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), as_strings=as_strings)
 
-    def __repr__(self):
-        size = len(self)
-        items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
-                :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
-        return f"RedisStore(host={self.host}, port={self.port}, db={self.db},string_keys={self.as_strings}) of size {size}\n{items}"
-
     def scan(self, *args, **kwargs):
         return self._store.scan_iter(*args, **kwargs)
 
     def keys(self, *args, **kwargs):
         for key in self._store.keys(*args, **kwargs):
             yield self.decode_key(key)
+
+    open = from_url
