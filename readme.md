@@ -125,5 +125,11 @@ assert store[1] == store["1"] == "1"
 store.update({'1': 1, '11': 1, 111: -111})
 assert list(store.scan('1*')) == ['111', '1', '11']  # redis turn every key to string
 ```
+### DynamoDBDict
+```bash
+pip install boto3 cerealbox
+```
 
+```python 
+```
 
