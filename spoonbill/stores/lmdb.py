@@ -4,7 +4,9 @@ import pathlib
 import os
 import lmdbm
 import cloudpickle
-from spoonbill.stores.base import KeyValueBase
+from lmdbm.lmdbm import remove_lmdbm
+
+from spoonbill.stores.base import ContextBase
 import shutil
 
 
@@ -31,43 +33,36 @@ class CloudpickleEncoder(lmdbm.Lmdb):
         return self.decode(value)
 
 
-class LmdbDict(KeyValueBase):
+class LmdbDict(ContextBase):
+    manager = CloudpickleEncoder
 
-    def __init__(self, store, db_path):
-        self._store = store
-        self.db_path = db_path
+    def __init__(self, path: str, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
+                 strict=False):
+        self.store_path = path
+        self.strict = strict
+        self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
+
+    def _flush(self):
+        remove_lmdbm(self.store_path)
 
     @property
     def map_size(self):
-        return self._store.map_size
+        return self.open_params.get("map_size")
 
     @property
     def autogrow(self):
-        return self._store.autogrow
-
-    def set(self, key, value):
-        self._store[key] = value
-        return True
-
-    def items(self):
-        for key in self.keys():
-            yield key, self[key]
-
-    def _flush(self):
-        map_size, autogrow = self.map_size, self.autogrow
-        with contextlib.suppress(FileNotFoundError):
-            shutil.rmtree(self.db_path)
-        self._store = CloudpickleEncoder.open(self.db_path, flag="c", mode=0o755, map_size=map_size, autogrow=autogrow)
-        return True
+        return self.open_params.get("autogrow")
 
     @classmethod
-    def from_db(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True):
+    def from_db(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
+                strict=False):
         return LmdbDict(
-            store=CloudpickleEncoder.open(db_path, flag=flag, mode=mode, map_size=map_size, autogrow=autogrow),
-            db_path=db_path)
-
-    def set_batch(self, keys, values):
-        self.update(zip(keys, values))
-        return True
+            path=db_path,
+            flag=flag,
+            mode=mode,
+            map_size=map_size,
+            autogrow=autogrow,
+            strict=strict
+        )
 
     open = from_db

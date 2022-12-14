@@ -35,12 +35,6 @@ class InMemoryDict(KeyValueBase):
     def items(self):
         return self._store.items()
 
-    def keys(self, pattern: str = None, *args, **kwargs):
-        if pattern:
-            pattern = re.compile(pattern)
-            return {key for key in self._store.keys() if pattern.match(str(key))}
-        return iter(self._store.keys())
-
     @classmethod
     def open(self, *args, **kwargs):
         """

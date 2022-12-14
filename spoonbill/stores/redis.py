@@ -1,25 +1,25 @@
 import typing
 import redis
 
-from spoonbill.stores.base import KeyValueBase
+from spoonbill.stores.base import KeyValueBase, Strict
 
 REDIS_DEFAULT_HOST = 'localhost'
 REDIS_DEFAULT_PORT = 6379
 REDIS_DEFAULT_DB = 1
 
 
-class RedisDict(KeyValueBase):
+class RedisDict(KeyValueBase, Strict):
 
-    def __init__(self, store: typing.Any, as_strings: bool = False):
+    def __init__(self, store: typing.Any, strict: bool = False):
         """
 
         :param store: The redis.Redis client
-        :param as_strings: If False, all keys and values are encoded and decoded using cloudpickle - This make the RedisDict behave like a normal dict
+        :param strict: If False, all keys and values are encoded and decoded using cloudpickle - This make the RedisDict behave like a normal dict
                 If True, all keys and values are encoded and decoded using str as default with redis - This make reading, writing and scaning faster
                 default: False
         """
         self._store = store
-        self.as_strings = as_strings
+        self.strict = strict
 
     def __len__(self):
         return self._store.dbsize()
@@ -43,34 +43,6 @@ class RedisDict(KeyValueBase):
     @classmethod
     def _databases_names(cls, store):
         return list(store.config_get("keyspace").keys())
-
-    def encode_key(self, key):
-        if self.as_strings:
-            return key
-        elif isinstance(key, str):
-            return key
-        return self.encode(key)
-
-    @staticmethod
-    def _is_encoded(value):
-        return str(value)[:2] == "b'"
-
-    def decode_key(self, key):
-        if self.as_strings:
-            return key
-        elif self._is_encoded(key):
-            return self.decode(key)
-        return key
-
-    def encode_value(self, value):
-        if self.as_strings:  # let redis handle the encoding
-            return value
-        return self.encode(value)
-
-    def decode_value(self, value):
-        if self.as_strings:  # let redis handle the encoding
-            return value
-        return self.decode(value)
 
     def __setitem__(self, key, value):
         self._store[self.encode_key(key)] = self.encode_value(value)
@@ -153,7 +125,7 @@ class RedisDict(KeyValueBase):
     @classmethod
     def from_url(cls, url: str, as_strings: bool = False, **kwargs):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisDict(store=redis.Redis.from_url(url, **kwargs), as_strings=as_strings)
+        return RedisDict(store=redis.Redis.from_url(url, **kwargs), strict=as_strings)
 
     @classmethod
     def from_connection(cls, host: str = REDIS_DEFAULT_HOST, port: int = REDIS_DEFAULT_PORT,
@@ -163,7 +135,7 @@ class RedisDict(KeyValueBase):
             store = redis.Redis(host=host, port=port, db=0, decode_responses=True)
             db = len(RedisDict._databases_names(store))  # TODO test this
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), as_strings=as_strings)
+        return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=as_strings)
 
     def scan(self, *args, **kwargs):
         return self._store.scan_iter(*args, **kwargs)
