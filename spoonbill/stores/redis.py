@@ -1,7 +1,7 @@
 import typing
 import redis
 
-from spoonbill.stores.__init__ import KeyValueStore, Strict
+from spoonbill.stores import KeyValueStore, Strict
 
 REDIS_DEFAULT_HOST = 'localhost'
 REDIS_DEFAULT_PORT = 6379

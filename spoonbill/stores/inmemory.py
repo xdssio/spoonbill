@@ -2,7 +2,7 @@ import json
 import pathlib
 import re
 import cloudpickle
-from spoonbill.stores.__init__ import KeyValueStore
+from spoonbill.stores import KeyValueStore
 
 
 class InMemoryDict(KeyValueStore):
