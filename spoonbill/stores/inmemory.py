@@ -54,14 +54,4 @@ class InMemoryDict(KeyValueBase):
             return cloudpathlib.CloudPath(path)
         return pathlib.Path(path)
 
-    def save(self, path):
-        path = self._get_path(path)
-        path.write_bytes(cloudpickle.dumps(self))
-        return True
 
-    @classmethod
-    def from_file(cls, path):
-        path = cls._get_path(path)
-        return cloudpickle.loads(path.read_bytes())
-
-    load = from_file
