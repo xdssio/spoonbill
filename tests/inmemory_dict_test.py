@@ -1,3 +1,5 @@
+from tempfile import TemporaryDirectory
+
 from spoonbill import InMemoryDict
 
 
@@ -30,3 +32,15 @@ def test_dict():
     assert len([1 for _ in store]) == 10  # test iterator
 
     assert list(store.scan('1*')) == list(range(10))  # scan looks at keys as strings
+
+
+def test_inmemory_save_load():
+    tmpdir = TemporaryDirectory()
+    path = tmpdir.name + '/tmp.db'
+    store = InMemoryDict.open()
+    store['test'] = 'test'
+    store.save(path)
+    store._flush()
+    assert len(store) == 0
+    store = InMemoryDict.load(path)
+    assert len(store) == 1

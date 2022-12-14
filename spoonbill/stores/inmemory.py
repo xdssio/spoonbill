@@ -1,5 +1,7 @@
 import json
+import pathlib
 import re
+import cloudpickle
 from spoonbill.stores.base import KeyValueBase
 
 
@@ -38,3 +40,28 @@ class InMemoryDict(KeyValueBase):
         :return:
         """
         return InMemoryDict()
+
+    @staticmethod
+    def _is_cloud_url(path):
+        if hasattr(path, 'dirname'):
+            path = path.dirname
+        return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", path) is not None
+
+    @staticmethod
+    def _get_path(path):
+        if InMemoryDict._is_cloud_url(path):
+            import cloudpathlib
+            return cloudpathlib.CloudPath(path)
+        return pathlib.Path(path)
+
+    def save(self, path):
+        path = self._get_path(path)
+        path.write_bytes(cloudpickle.dumps(self))
+        return True
+
+    @classmethod
+    def from_file(cls, path):
+        path = cls._get_path(path)
+        return cloudpickle.loads(path.read_bytes())
+
+    load = from_file
