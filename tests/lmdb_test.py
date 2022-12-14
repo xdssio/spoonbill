@@ -15,7 +15,7 @@ def test_lmdb():
     store.set('another', 'another')
     assert store.get('another') == 'another'
 
-    assert store.get('nope', 'nope') == 'nope' # test default value
+    assert store.get('nope', 'nope') == 'nope'  # test default value
     assert 'test' in store  # test contains
 
     assert set(store.keys()) == set(['test', 'another'])

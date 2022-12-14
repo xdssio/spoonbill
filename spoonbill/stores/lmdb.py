@@ -1,13 +1,8 @@
-import contextlib
-import json
-import pathlib
-import os
 import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
 
-from spoonbill.stores.base import ContextBase
-import shutil
+from spoonbill.stores.__init__ import ContextStore
 
 
 class CloudpickleEncoder(lmdbm.Lmdb):
@@ -33,7 +28,7 @@ class CloudpickleEncoder(lmdbm.Lmdb):
         return self.decode(value)
 
 
-class LmdbDict(ContextBase):
+class LmdbDict(ContextStore):
     manager = CloudpickleEncoder
 
     def __init__(self, path: str, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,

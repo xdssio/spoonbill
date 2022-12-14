@@ -2,10 +2,10 @@ import contextlib
 import os
 
 import shelve
-from spoonbill.stores.base import ContextBase, Strict
+from spoonbill.stores.__init__ import ContextStore, Strict
 
 
-class ShelveStore(ContextBase, Strict):
+class ShelveStore(ContextStore, Strict):
     manager = shelve
 
     def __init__(self, path, strict=False):

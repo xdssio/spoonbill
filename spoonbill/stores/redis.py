@@ -1,14 +1,14 @@
 import typing
 import redis
 
-from spoonbill.stores.base import KeyValueBase, Strict
+from spoonbill.stores.__init__ import KeyValueStore, Strict
 
 REDIS_DEFAULT_HOST = 'localhost'
 REDIS_DEFAULT_PORT = 6379
 REDIS_DEFAULT_DB = 1
 
 
-class RedisDict(KeyValueBase, Strict):
+class RedisDict(KeyValueStore, Strict):
 
     def __init__(self, store: typing.Any, strict: bool = False):
         """

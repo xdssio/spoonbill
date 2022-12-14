@@ -7,18 +7,6 @@ import cloudpickle
 import re
 
 
-def to_int(i):
-    with contextlib.suppress(ValueError):
-        return int(i)
-    return False
-
-
-def to_float(f):
-    with contextlib.suppress(ValueError):
-        return float(f)
-    return False
-
-
 class Strict:
     encoding: str = 'cp1252'
     strict: bool = False
@@ -73,7 +61,7 @@ class Strict:
     load = from_file
 
 
-class KeyValueBase(Strict):
+class KeyValueStore(Strict):
     _store: typing.Any = None
     strict: bool = False
 
@@ -169,7 +157,7 @@ class KeyValueBase(Strict):
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
 
-class ContextBase(KeyValueBase, Strict):
+class ContextStore(KeyValueStore, Strict):
     store_path: str = None
     manager: typing.Any = None
     open_params: dict = {}

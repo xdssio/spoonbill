@@ -1,5 +1,5 @@
-from spoonbill.stores.base import KeyValueBase
+from spoonbill.stores.__init__ import KeyValueStore
 
 
-class MongoDBStore(KeyValueBase):
+class MongoDBStore(KeyValueStore):
     pass

@@ -24,26 +24,31 @@ For each key-value store, there are two classes:
 
 * For scan operations, you need to use a keys as strings.
 
-| operation   | InMemoryDict | RedisDict | LmdbDict | DynamoDB | Datastore | MongoDB |
-|-------------|--------------|-----------|----------|----------|-----------|---------|
-| set         | √            | √         | √        |          |           |         | 
-| get         | √            | √         | √        |          |           |         |
-| pop         | √            | √         | √        |          |           |         |
-| delete      | √            | √         | √        |          |           |         |
-| len         | √            | √         | √        |          |           |         |
-| eq          | √            | √         | √        |          |           |         |
-| keys        | √            | √         | √        |          |           |         |
-| values      | √            | √         | √        |          |           |         |
-| items       | √            | √         | √        |          |           |         |
-| iter        | √            | √         | √        |          |           |         |
-| contains    | √            | √         | √        |          |           |         |
-| update      | √            | √         | √        |          |           |         |
-| get_batch   | √            | √         | √        |          |           |         |
-| set_batch   | √            | √         | √        |          |           |         |
-| scan        | √            | √         | √        |          |           |         |
-| persistence | X            | √         | √        |          |           |         |
+| operation   | InMemoryDict | RedisDict | LmdbDict | PysosDict | DynamoDB | Datastore | MongoDB |
+|-------------|--------------|-----------|----------|-----------|----------|-----------|---------|
+| set         | √            | √         | √        | √         |          |           |         | 
+| get         | √            | √         | √        | √         |          |           |         |
+| pop         | √            | √         | √        | √         |          |           |         |
+| delete      | √            | √         | √        | √         |          |           |         |
+| len         | √            | √         | √        | √         |          |           |         |
+| eq          | √            | √         | √        | √         |          |           |         |
+| keys        | √            | √         | √        | √         |          |           |         |
+| values      | √            | √         | √        | √         |          |           |         |
+| items       | √            | √         | √        | √         |          |           |         |
+| iter        | √            | √         | √        | √         |          |           |         |
+| contains    | √            | √         | √        | √         |          |           |         |
+| update      | √            | √         | √        | √         |          |           |         |
+| get_batch   | √            | √         | √        | √         |          |           |         |
+| set_batch   | √            | √         | √        | √         |          |           |         |
+| scan        | √            | √         | √        | √         |          |           |         |
+| persistence | X            | √         | √        | √         |          |           |         |
 
 ## Usage
+All the classes have the same interface, so you can use them interchangeably.
+
+* The *strict* argument is used to control if to encode the keys and values with cloudpickle or keep original behavior. if strict is False, any key and value can be used, otherwise it depands on the backend.
+
+
 
 ### InMemoryDict
 
@@ -51,17 +56,20 @@ This object is to have a common interface for all the key-value stores. It is gr
 case, to have a common interface which includes the scan operation.
 
 * When using scan, the keys are evaluated as strings to match with the pattern.
-
+* Save/load are implemented to save/load the whole dict to/from a file, locally or on the cloud using [cloudpathlib](https://cloudpathlib.drivendata.org/stable/).
 ```python
 from spoonbill import InMemoryDict
 
-store = InMemoryDict.open() # or InMemoryDict()
+store = InMemoryDict.open()  # or InMemoryDict()
 store["key"] = "value"
 assert store["key"] == "value"
 assert list(store.scan("key*")) == ["key"]
 ``` 
+
 ### LmdbDict
-LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library. It is a fast key-value with memory-mapped persistence
+
+LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library. It is a fast key-value with memory-mapped
+persistence
 ```pip install lmdbm```
 
 ```python
@@ -73,6 +81,23 @@ assert store["key"] == "value"
 assert list(store.scan("key*")) == ["key"]
 
 ```
+
+### PysosDict pySOS: Simple Objects Storage
+
+A wrapper around the [pysos](https://github.com/dagnelies/pysos) library. This is ideal for lists or dictionaries which
+either need persistence, are too big to fit in memory or both.
+
+```pip install pysos```
+
+```python
+from spoonbill import PysosDict
+
+store = PysosDict.open('tmp.db')
+store["key"] = "value"
+assert store["key"] == "value"
+
+```
+
 ### RedisDict
 
 As default, the RedisDict act as a python dict, encode every key and value to bytes using cloudpickle. This allows to

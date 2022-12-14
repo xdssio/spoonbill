@@ -2,10 +2,10 @@ import json
 import pathlib
 import re
 import cloudpickle
-from spoonbill.stores.base import KeyValueBase
+from spoonbill.stores.__init__ import KeyValueStore
 
 
-class InMemoryDict(KeyValueBase):
+class InMemoryDict(KeyValueStore):
     """
     A key-value store that stores everything in memory.
     Practically a python dictionary

@@ -2,10 +2,10 @@ import os
 
 import pysos
 
-from spoonbill.stores.base import KeyValueBase
+from spoonbill.stores.__init__ import KeyValueStore
 
 
-class PysosDict(KeyValueBase):
+class PysosDict(KeyValueStore):
     """
     pySOS: Simple Objects Storage
 
