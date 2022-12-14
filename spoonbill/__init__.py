@@ -8,3 +8,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from spoonbill.stores.lmdb import LmdbDict
+
+with contextlib.suppress(ImportError):
+    from spoonbill.stores.pysos import PysosDict

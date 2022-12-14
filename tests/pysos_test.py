@@ -1,11 +1,11 @@
-from spoonbill import LmdbDict
+from spoonbill import PysosDict
 from tempfile import TemporaryDirectory
 
 
-def test_lmdb():
+def test_pysos():
     tmpdir = TemporaryDirectory()
     path = tmpdir.name + '/tmp.db'
-    store = LmdbDict.open(path)
+    self = store = PysosDict.open(path)
     store._flush()
     assert len(store) == 0
     store['test'] = 'test'
@@ -14,7 +14,6 @@ def test_lmdb():
     # test set and get
     store.set('another', 'another')
     assert store.get('another') == 'another'
-
     assert store.get('nope', 'nope') == 'nope' # test default value
     assert 'test' in store  # test contains
 

@@ -9,8 +9,9 @@ class InMemoryDict(KeyValueBase):
     Practically a python dictionary
     """
 
-    def __init__(self, store: dict = None):
+    def __init__(self, store: dict = None, strict: bool = False):
         self._store = store or {}
+        self.strict = strict
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -21,19 +22,12 @@ class InMemoryDict(KeyValueBase):
         return InMemoryDict(json.loads(j))
 
     def set(self, key, value):
-        self._store[key] = value
+        self._store[self.encode_key(key)] = self.encode_value(value)
         return True
 
     def _flush(self):
         self._store = {}
         return True
-
-    def update(self, d):
-        self._store.update(d)
-        return self
-
-    def items(self):
-        return self._store.items()
 
     @classmethod
     def open(self, *args, **kwargs):

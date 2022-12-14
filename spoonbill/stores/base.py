@@ -19,86 +19,6 @@ def to_float(f):
     return False
 
 
-class KeyValueBase:
-    _store: typing.Any = None
-    strict: bool = False
-
-    def __init__(self, store: typing.Any, strict: bool = False):
-        self._store = store
-        self.strict = strict
-
-    def __getitem__(self, item):
-        return self._store[item]
-
-    def __setitem__(self, key, value):
-        self._store[key] = value
-
-    def __len__(self):
-        return len(self._store)
-
-    def __iter__(self):
-        return iter(self.keys())
-
-    def __next__(self):
-        for key in self.keys():
-            yield key
-
-    def __eq__(self, other):
-        if len(self) != len(other):
-            return False
-        for key, value in self.items():
-            if other.get(key) != value:
-                return False
-        return True
-
-    def keys(self, *args, **kwargs):
-        return self._store.keys(*args, **kwargs)
-
-    def values(self):
-        return self._store.values()
-
-    def pop(self, key, default=None):
-        return self._store.pop(key, default)
-
-    def popitem(self):
-        return self._store.popitem()
-
-    def get(self, key, default=None):
-        return self._store.get(key, default)
-
-    def set(self, key, value):
-        return self._store.set(key, value)
-
-    def update(self, d):
-        self._store.update(d)
-        return self
-
-    def get_batch(self, keys, default=None):
-        for key in keys:
-            yield self.get(key, default)
-
-    def set_batch(self, keys, values):
-        for key, value in zip(keys, values):
-            self.set(key, value)
-        return True
-
-    def scan(self, pattern: str = None, count: int = None, **kwargs):
-        if count is not None:
-            warnings.warn('count is not supported in MemoryStore')
-        if not pattern:
-            pattern = "[\s\S]*"
-        pattern = re.compile(pattern)
-        for key in self.keys():
-            if pattern.match(str(key)):
-                yield key
-
-    def __repr__(self):
-        size = len(self)
-        items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
-                :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
-        return f"{self.__class__.__name__}() of size {size}\n{items}"
-
-
 class Strict:
     encoding: str = 'cp1252'
     strict: bool = False
@@ -139,6 +59,102 @@ class Strict:
         if self.strict:  # let redis handle the encoding
             return value
         return self.decode(value)
+
+
+class KeyValueBase(Strict):
+    _store: typing.Any = None
+    strict: bool = False
+
+    def __init__(self, store: typing.Any, strict: bool = False):
+        self._store = store
+        self.strict = strict
+
+    def __getitem__(self, item):
+        return self.decode_value(self._store[self.encode_key(item)])
+
+    def __setitem__(self, key, value):
+        self._store[self.encode_key(key)] = self.encode_value(value)
+
+    def __len__(self):
+        return len(self._store)
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def __next__(self):
+        for key in self.keys():
+            yield key
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for key, value in self.items():
+            if other.get(key) != value:
+                return False
+        return True
+
+    def keys(self, *args, **kwargs):
+        for key in self._store.keys(*args, **kwargs):
+            yield self.decode_key(key)
+
+    def values(self):
+        for value in self._store.values():
+            yield self.decode_value(value)
+
+    def items(self):
+        for key, value in self._store.items():
+            yield self.decode_key(key), self.decode_value(value)
+
+    def pop(self, key, default=None):
+        ret = self._store.pop(self.decode_key(key))
+        if ret is None:
+            return default
+        return self.decode_value(ret)
+
+    def popitem(self):
+        return self.decode_value(self._store.popitem())
+
+    def get(self, key, default=None):
+        ret = self._store.get(self.encode_key(key))
+        if ret is None:
+            return default
+        return self.decode_value(ret)
+
+    def set(self, key, value):
+        return self._store.set(self.encode_key(key), self.encode_value(value))
+
+    def update(self, d):
+        self._store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
+        return self
+
+    def get_batch(self, keys, default=None):
+        for key in keys:
+            ret = self.get(self.encode_key(key))
+            if ret is None:
+                yield default
+            else:
+                yield self.decode_value(ret)
+
+    def set_batch(self, keys, values):
+        for key, value in zip(keys, values):
+            self.set(self.encode_key(key), self.encode_value(value))
+        return True
+
+    def scan(self, pattern: str = None, count: int = None, **kwargs):
+        if count is not None:
+            warnings.warn('count is not supported in MemoryStore')
+        if not pattern:
+            pattern = "[\s\S]*"
+        pattern = re.compile(pattern)
+        for key in self.keys():
+            if pattern.match(str(key)):
+                yield key
+
+    def __repr__(self):
+        size = len(self)
+        items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
+                :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
+        return f"{self.__class__.__name__}() of size {size}\n{items}"
 
 
 class ContextBase(KeyValueBase, Strict):
