@@ -19,11 +19,11 @@ class DynamoDBDict(KeyValueStore):
         self.client = boto3.client('dynamodb')
         self.strict = True
         self.key_type = key_type
-        self._create_table(**kwargs)
+        self.create_table()
 
     @classmethod
     def open(self, table_name: str, key_type: str = None, **kwargs):
-        client = boto3.client('dynamodb')
+        client = boto3.client('dynamodb', **kwargs)
         if key_type is None:
             try:
                 description = client.describe_table(TableName='asf')
@@ -35,19 +35,21 @@ class DynamoDBDict(KeyValueStore):
     def _list_tables(self):
         return self.client.list_tables()['TableNames']
 
-    def _create_table(self, table_name: str = None,
-                      key_schema: typing.List[dict] = None,  # Partition key
-                      attribute_definitions: typing.List[dict] = None,
-                      **kwargs):
-        key_schema = key_schema or [{'AttributeName': 'key', 'KeyType': 'HASH'}]
-        attribute_definitions = attribute_definitions or [{'AttributeName': 'key', 'AttributeType': self.key_type}]
+    def create_table(self, table_name: str = None,
+                     key_schema: typing.List[dict] = None,  # Partition key
+                     attribute_definitions: typing.List[dict] = None,
+                     billing_mode: str = None,
+                     **kwargs):
         table_name = table_name or self.table_name
+
         if not table_name in self._list_tables():
-            billing = kwargs.pop('billing_mode', 'PAY_PER_REQUEST')
+            key_schema = key_schema or kwargs.pop('AttributeDefinitions', [{'AttributeName': 'key', 'KeyType': 'HASH'}])
+            attribute_definitions = attribute_definitions or kwargs.pop('AttributeDefinitions', [
+                {'AttributeName': 'key', 'AttributeType': self.key_type}])
+            billing_mode = billing_mode or kwargs.pop('BillingMode', 'PAY_PER_REQUEST')
             return self.client.create_table(TableName=table_name, KeySchema=key_schema,
                                             AttributeDefinitions=attribute_definitions,
-                                            BillingMode=billing,
-
+                                            BillingMode=billing_mode,
                                             **kwargs)
         return False
 
@@ -154,7 +156,6 @@ class DynamoDBDict(KeyValueStore):
     def keys(self, pattern: str = None, count: int = None):
         params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': ['key']}
         for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
-            print(item)
             yield item['key']
 
     def values(self, limit: int = None):
@@ -171,10 +172,10 @@ class DynamoDBDict(KeyValueStore):
         description = self.description['Table']
         self._delete_table(self.table_name)
         time.sleep(2)
-        self._create_table(table_name=self.table_name,
-                           key_schema=description['KeySchema'],
-                           attribute_definitions=description['AttributeDefinitions'],
-                           billing_mode=description['BillingModeSummary']['BillingMode'])
+        self.create_table(table_name=self.table_name,
+                          key_schema=description['KeySchema'],
+                          attribute_definitions=description['AttributeDefinitions'],
+                          billing_mode=description['BillingModeSummary']['BillingMode'])
         return True
 
     def pop(self, key, default=None):
