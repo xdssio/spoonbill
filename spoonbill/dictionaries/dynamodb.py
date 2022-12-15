@@ -22,14 +22,15 @@ class DynamoDBDict(KeyValueStore):
         self._create_table(**kwargs)
 
     @classmethod
-    def open(self, table_name: str, key_type: str = 'S', **kwargs):
-        return DynamoDBDict(table_name=table_name, key_type=key_type, **kwargs)
-
-    def from_table(self, table_name: str):
+    def open(self, table_name: str, key_type: str = None, **kwargs):
         client = boto3.client('dynamodb')
-        description = client.describe_table(TableName=table_name)
-        key_type = description['Table']['AttributeDefinitions'][0]['AttributeType']
-        return DynamoDBDict(table_name=table_name, key_type=key_type)
+        if key_type is None:
+            try:
+                description = client.describe_table(TableName='asf')
+                key_type = description['Table']['AttributeDefinitions'][0]['AttributeType']
+            except:
+                key_type = 'S'
+        return DynamoDBDict(table_name=table_name, key_type=key_type, **kwargs)
 
     def _list_tables(self):
         return self.client.list_tables()['TableNames']
