@@ -1,4 +1,3 @@
-import json
 import typing
 import contextlib
 import warnings
@@ -93,6 +92,25 @@ class KeyValueStore(Strict):
                 return False
         return True
 
+    def _to_iter(self, sequence: typing.Sequence, pattern: str = None, count: int = None):
+        if pattern:
+            pattern = re.compile(pattern)
+        for i, item in enumerate(sequence):
+            if i == count:
+                break
+            if not pattern:
+                yield item
+            else:
+                if isinstance(item, tuple):
+                    key = item[0]
+                elif isinstance(item, dict):
+                    key = item.get('key')
+                else:
+                    key = item
+                key = self.decode_key(key)
+                if pattern.match(str(key)):
+                    yield item
+
     def keys(self, *args, **kwargs):
         for key in self._store.keys(*args, **kwargs):
             yield self.decode_key(key)
@@ -150,6 +168,16 @@ class KeyValueStore(Strict):
             if pattern.match(str(key)):
                 yield key
 
+    def scan_items(self, pattern: str = None, count: int = None, **kwargs):
+        if count is not None:
+            warnings.warn('count is not supported in MemoryStore')
+        if not pattern:
+            pattern = "[\s\S]*"
+        pattern = re.compile(pattern)
+        for key in self.keys():
+            if pattern.match(str(key)):
+                yield key, self.get(key)
+
     def __repr__(self):
         size = len(self)
         items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
@@ -178,19 +206,19 @@ class ContextStore(KeyValueStore, Strict):
         with self.manager.open(self.store_path, **self.open_params) as store:
             return len(store)
 
-    def keys(self, *args, **kwargs):
+    def keys(self, pattern: str = None, count: int = None, **kwargs):
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for key in store.keys(*args, **kwargs):
+            for key in self._to_iter(store.keys(), pattern=pattern, count=count):
                 yield self.decode_key(key)
 
-    def values(self, *args, **kwargs):
+    def values(self):
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for value in store.values(*args, **kwargs):
+            for value in store.values():
                 yield self.decode_value(value)
 
-    def items(self, *args, **kwargs):
+    def items(self, pattern: str = None, count: int = None, **kwargs):
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for item in store.items(*args, **kwargs):
+            for item in self._to_iter(store.items(), pattern=pattern, count=count):
                 yield self.decode_key(item[0]), self.decode_value(item[1])
 
     def get(self, key, default=None):
@@ -228,3 +256,21 @@ class ContextStore(KeyValueStore, Strict):
             for key, value in zip(keys, values):
                 store[self.encode_key(key)] = self.encode_value(value)
         return True
+
+    scan = items
+
+
+from .inmemory import InMemoryDict
+from .shelve import ShelveStore
+
+with contextlib.suppress(ImportError):
+    from .redis import RedisDict
+
+with contextlib.suppress(ImportError):
+    from .lmdb import LmdbDict
+
+with contextlib.suppress(ImportError):
+    from .pysos import PysosDict
+
+with contextlib.suppress(ImportError):
+    from .dynamodb import DynamoDBDict

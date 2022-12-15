@@ -1,7 +1,7 @@
 import typing
 import redis
 
-from spoonbill.stores import KeyValueStore, Strict
+from spoonbill.dictionaries import KeyValueStore, Strict
 
 REDIS_DEFAULT_HOST = 'localhost'
 REDIS_DEFAULT_PORT = 6379
@@ -96,22 +96,44 @@ class RedisDict(KeyValueStore, Strict):
     def pipeline(self):
         return self._store.pipeline()
 
-    def values(self):
+    def scan(self, pattern: str = None, *args, **kwargs):
+        params = {'count': 1000000}
+        if pattern:
+            params['match'] = pattern
         if len(self) > 0:
             cursor = '0'
             while cursor != 0:
-                cursor, keys = self._store.scan(cursor=cursor, count=1000000)
-                for value in self._store.mget(*keys):
+                cursor, keys = self._store.scan(cursor=cursor, **params)
+                values = self._store.mget(*keys)
+                for key, value in zip(keys, values):
                     if value is None:
                         continue
-                    yield self.decode_value(value)
+                    yield self.decode_key(key), self.decode_value(value)
 
-    def items(self):
-        keys = self._store.keys()
-        if len(keys) == 0:
-            return []
-        values = self._store.mget(*keys)
-        for key, value in zip(keys, values):
+    def keys(self, pattern: str = None, *args, **kwargs):
+        if pattern:
+            kwargs['pattern'] = pattern
+        for key in self._store.keys(*args, **kwargs):
+            yield self.decode_key(key)
+
+    def _items(self, pattern: str = None, *args, **kwargs):
+        if pattern:
+            kwargs['pattern'] = pattern
+        keys = self._store.keys(*args, **kwargs)
+        if keys:
+            values = self._store.mget(*keys)
+            return zip(keys, values)
+        return iter([])
+
+    def values(self, *args, **kwargs):
+        kwargs.pop('pattern', None)
+        for key, value in self._items(*args, **kwargs):
+            if value is None:
+                continue
+            yield self.decode_value(value)
+
+    def items(self, pattern: str = None, *args, **kwargs):
+        for key, value in self._items(pattern, *args, **kwargs):
             if value is None:
                 continue
             yield self.decode_key(key), self.decode_value(value)
@@ -136,12 +158,5 @@ class RedisDict(KeyValueStore, Strict):
             db = len(RedisDict._databases_names(store))  # TODO test this
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
         return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=as_strings)
-
-    def scan(self, *args, **kwargs):
-        return self._store.scan_iter(*args, **kwargs)
-
-    def keys(self, *args, **kwargs):
-        for key in self._store.keys(*args, **kwargs):
-            yield self.decode_key(key)
 
     open = from_url

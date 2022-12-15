@@ -2,7 +2,7 @@ import os
 
 import pysos
 
-from spoonbill.stores import KeyValueStore
+from spoonbill.dictionaries import KeyValueStore
 
 
 class PysosDict(KeyValueStore):

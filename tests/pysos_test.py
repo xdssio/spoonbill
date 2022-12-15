@@ -1,4 +1,4 @@
-from spoonbill import PysosDict
+from spoonbill.dictionaries import PysosDict
 from tempfile import TemporaryDirectory
 
 

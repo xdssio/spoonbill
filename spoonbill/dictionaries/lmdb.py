@@ -2,7 +2,7 @@ import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
 
-from spoonbill.stores import ContextStore
+from spoonbill.dictionaries import ContextStore
 
 
 class CloudpickleEncoder(lmdbm.Lmdb):

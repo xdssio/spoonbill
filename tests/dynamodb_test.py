@@ -1,14 +1,20 @@
-from spoonbill import DynamoDBDict
+from spoonbill.dictionaries import DynamoDBDict
 import time
 import pytest
 
 
 @pytest.mark.skip("Run this test manually")
 def test_dynamodb():
-    store = DynamoDBDict.open('tmp')
+    self = store = DynamoDBDict.open('tmp')
     store._flush()
-    time.sleep(60)
-    assert len(store) == 0
+    flag = True
+    while flag:
+        try:
+            assert len(store) == 0
+            flag = False
+        except:
+            time.sleep(1)
+
     store['test'] = 'test'
     assert len(store) == 1
     assert store['test'] == store.get('test') == 'test'
@@ -22,6 +28,9 @@ def test_dynamodb():
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+
+    assert list(store.keys(pattern='test')) == ['test']
+    assert list(store.items(pattern='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1

@@ -1,4 +1,4 @@
-from spoonbill import ShelveStore
+from spoonbill.dictionaries import ShelveStore
 from tempfile import TemporaryDirectory
 
 

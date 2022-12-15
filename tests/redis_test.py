@@ -1,4 +1,4 @@
-from spoonbill import RedisDict
+from spoonbill.dictionaries import RedisDict
 
 
 def test_redis_from_connection():
@@ -24,6 +24,8 @@ def test_redis_open():
 
 def test_redis_dict():
     store = RedisDict.open('redis://localhost:6379/1')
+    list(store.keys(count=1))
+    list(store.values())
     assert store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -34,6 +36,9 @@ def test_redis_dict():
     assert set(store.keys()) == set(['test', 'another', 1])
     assert set(store.values()) == set(['test', 'another', 1])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another'), (1, 1)])
+
+    assert list(store.keys('test')) == ['test']
+    assert list(store.items('test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 2
@@ -53,8 +58,8 @@ def test_redis_dict():
 
     store._flush()
     store.update({'1': 1, '11': 11, '2': 2, '3': 3, 1: -1, 11: -11})
-    assert set(store.scan('1*')) == set(store.keys('1*')) == set(['1', '11'])  # scan only works with string keys
-    assert set(store.items()) == set([('1', 1), ('11', 11), ('2', 2), ('3', 3), (1, -1), (11, -11)])
+    assert set(store.scan('1*')) == set([('1', 1), ('11', 11)])  # scan only works with string keys
+    assert set(store.keys('1*')) == set(['1', '11'])
     store._flush()
 
 
@@ -69,4 +74,5 @@ def test_redis_as_string():
     assert store[1] == store._store[1] == store['1'] == store._store['1']
     store[11] = 11
     store[2] = 2
-    assert set(store.scan('1*')) == set(store.keys('1*')) == set(['1', '11'])
+    assert set(store.scan('1*')) == set([('1', '1'), ('11', '11')])
+    assert set(store.keys('1*')) == set(['1', '11'])

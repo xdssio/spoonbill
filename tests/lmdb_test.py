@@ -1,4 +1,4 @@
-from spoonbill import LmdbDict
+from spoonbill.dictionaries import LmdbDict
 from tempfile import TemporaryDirectory
 
 
@@ -21,6 +21,9 @@ def test_lmdb():
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+
+    assert list(store.keys(pattern='test')) == ['test']
+    assert list(store.items(pattern='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1

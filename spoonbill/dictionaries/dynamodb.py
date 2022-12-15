@@ -2,7 +2,7 @@ import typing
 
 import contextlib
 import logging
-from spoonbill.stores import KeyValueStore
+from spoonbill.dictionaries import KeyValueStore
 import boto3
 import decimal
 from cerealbox.dynamo import from_dynamodb_json, as_dynamodb_json
@@ -150,9 +150,10 @@ class DynamoDBDict(KeyValueStore):
                 err.response['Error']['Code'], err.response['Error']['Message'])
             raise
 
-    def keys(self, *args, limit: int = None):
+    def keys(self, pattern: str = None, count: int = None):
         params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': ['key']}
-        for item in self._simple_scan(params, limit):
+        for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
+            print(item)
             yield item['key']
 
     def values(self, limit: int = None):
@@ -160,9 +161,9 @@ class DynamoDBDict(KeyValueStore):
         for item in self._simple_scan(params, limit):
             yield item['value']
 
-    def items(self, limit: int = None):
+    def items(self, pattern: str = None, count: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
-        for item in self._simple_scan(params, limit):
+        for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
             yield item['key'], item['value']
 
     def _flush(self):
@@ -195,24 +196,13 @@ class DynamoDBDict(KeyValueStore):
             yield self._from_dynamodb_item(item)['value']
 
     def _insert_items(self, items):
-        to_insert = []
-        for i, (key, value) in enumerate(items):
-            if i != 0 and i % 25 == 0:  # dynamodb constraint
-                self.client.batch_write_item(RequestItems={self.table_name: to_insert})
-                to_insert = []
-            to_insert.append({'PutRequest': {'Item': self._to_dynamodb_item(key, value)}})
-        if to_insert:
-            self.client.batch_write_item(RequestItems={self.table_name: to_insert})
-        return i + 1
-
-    def set_batch(self, keys, values):
-        """
-        Insert a batch of items into the table in chunks of 25 items.
-        :param keys: iterable of keys of the currect table type
-        :param values:
-        :return: Count of items inserted
-        """
-        return self._insert_items(zip(keys, values))
+        table = boto3.resource('dynamodb').Table(self.table_name)
+        count = 0
+        with table.batch_writer() as batch:
+            for key, value in items:
+                response = batch.put_item(Item={'key': key, 'value': value})
+                count += 1
+        return count
 
     def update(self, d):
         """
@@ -221,3 +211,11 @@ class DynamoDBDict(KeyValueStore):
        :return: Count of items inserted
        """
         return self._insert_items(d.items())
+
+    def set_batch(self, keys, values):
+        """
+         Insert a batch of items into the table in chunks of 25 items.
+         :param d: A dictionary like object with items() method
+         :return: Count of items inserted
+         """
+        return self._insert_items(zip(keys, values))

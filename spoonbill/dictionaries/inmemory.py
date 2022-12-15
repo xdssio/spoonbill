@@ -1,13 +1,15 @@
 import json
 import pathlib
 import re
+from typing import Sequence
+
 import cloudpickle
-from spoonbill.stores import KeyValueStore
+from spoonbill.dictionaries import KeyValueStore
 
 
 class InMemoryDict(KeyValueStore):
     """
-    A key-value store that stores everything in memory.
+    A key-value store that dictionaries everything in memory.
     Practically a python dictionary
     """
 
@@ -32,14 +34,14 @@ class InMemoryDict(KeyValueStore):
         return True
 
     @classmethod
-    def open(self, *args, **kwargs):
+    def open(self, path=None, *args, **kwargs):
         """
-        This is a dummy method to make the API consistent with other stores
+        This is a dummy method to make the API consistent with other dictionaries
         :param args:
         :param kwargs:
         :return:
         """
-        return InMemoryDict()
+        return InMemoryDict() if path is None else InMemoryDict.from_file(path)
 
     @staticmethod
     def _is_cloud_url(path):
@@ -54,4 +56,18 @@ class InMemoryDict(KeyValueStore):
             return cloudpathlib.CloudPath(path)
         return pathlib.Path(path)
 
+    def keys(self, pattern: str = None, count: int = None, *args, **kwargs):
+        for key in self._to_iter(self._store.keys(), pattern, count):
+            yield self.decode_key(key)
 
+    def values(self, count: int = None):
+        for value in self._store.values():
+            if value is not None:
+                yield self.decode_value(value)
+
+    def items(self, pattern: str = None, count: int = None):
+        for key, value in self._to_iter(self._store.items(), pattern, count):
+            if value is not None:
+                yield self.decode_key(key), self.decode_value(value)
+
+    scan = items
