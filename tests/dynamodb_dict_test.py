@@ -14,7 +14,7 @@ def test_dynamodb():
             flag = False
         except:
             time.sleep(1)
-
+    print('done cleaning dynamodb table "tmp"')
     store['test'] = 'test'
     assert len(store) == 1
     assert store['test'] == store.get('test') == 'test'
