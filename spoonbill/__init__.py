@@ -11,3 +11,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from spoonbill.stores.pysos import PysosDict
+
+with contextlib.suppress(ImportError):
+    from spoonbill.stores.dynamodb import DynamoDBDict

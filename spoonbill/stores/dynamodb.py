@@ -168,7 +168,7 @@ class DynamoDBDict(KeyValueStore):
     def _flush(self):
         description = self.description['Table']
         self._delete_table(self.table_name)
-        time.sleep(1)
+        time.sleep(2)
         self._create_table(table_name=self.table_name,
                            key_schema=description['KeySchema'],
                            attribute_definitions=description['AttributeDefinitions'],
@@ -189,15 +189,35 @@ class DynamoDBDict(KeyValueStore):
         raise KeyError('popitem(): dictionary is empty')
 
     def get_batch(self, keys, default=None):
-        return self.client.batch_get_item(TableName=self.table_name, Keys=[self._to_dynamodb_key(key) for key in keys])
+        responses = self.client.batch_get_item(
+            RequestItems={self.table_name: {'Keys': [self._to_dynamodb_key(key) for key in keys]}})
+        for item in responses['Responses'][self.table_name]:
+            yield self._from_dynamodb_item(item)['value']
+
+    def _insert_items(self, items):
+        to_insert = []
+        for i, (key, value) in enumerate(items):
+            if i != 0 and i % 25 == 0:  # dynamodb constraint
+                self.client.batch_write_item(RequestItems={self.table_name: to_insert})
+                to_insert = []
+            to_insert.append({'PutRequest': {'Item': self._to_dynamodb_item(key, value)}})
+        if to_insert:
+            self.client.batch_write_item(RequestItems={self.table_name: to_insert})
+        return i + 1
 
     def set_batch(self, keys, values):
-        self.client.batch_write_item(RequestItems={
-            self.table_name: [{'PutRequest':
-                                   {'Item': {self._to_dynamodb_item(key, value) for key, value in
-                                             zip(keys, values)}}}]})
-        return len(keys)
+        """
+        Insert a batch of items into the table in chunks of 25 items.
+        :param keys: iterable of keys of the currect table type
+        :param values:
+        :return: Count of items inserted
+        """
+        return self._insert_items(zip(keys, values))
 
     def update(self, d):
-        self.client.batch_write_item(TableName=self.table_name,
-                                     Items=[self._to_dynamodb_item(key, value) for key, value in d.items()])
+        """
+       Insert a batch of items into the table in chunks of 25 items.
+       :param d: A dictionary like object with items() method
+       :return: Count of items inserted
+       """
+        return self._insert_items(d.items())

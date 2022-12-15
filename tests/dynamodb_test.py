@@ -1,8 +1,13 @@
 from spoonbill import DynamoDBDict
+import time
+import pytest
 
+
+@pytest.mark.skip("Run this test manually")
 def test_dynamodb():
     self = store = DynamoDBDict.open('tmp')
     store._flush()
+    time.sleep(60)
     assert len(store) == 0
     store['test'] = 'test'
     assert len(store) == 1
@@ -24,11 +29,8 @@ def test_dynamodb():
     assert store.update({'test': 'test2', 'another': 'another2'})
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
-    store._flush()
-    store.set_batch(range(10), range(10))
-    assert len(store) == 10
-    assert set(store.get_batch(range(10))) == set(range(10))
-    assert len([1 for _ in store]) == 10  # test iterator
 
-    store['function'] = lambda x: x + 1
-    assert store['function'](1) == 2
+    store.set_batch([str(i) for i in range(10)], range(10))
+    assert len(store) == 12
+    assert set(store.get_batch([str(i) for i in range(10)])) == set(range(10))
+    assert len([1 for _ in store]) == 12  # test iterator
