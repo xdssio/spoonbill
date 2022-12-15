@@ -5,7 +5,7 @@ import pytest
 
 @pytest.mark.skip("Run this test manually")
 def test_dynamodb():
-    self = store = DynamoDBDict.open('tmp')
+    store = DynamoDBDict.open('tmp')
     store._flush()
     time.sleep(60)
     assert len(store) == 0
