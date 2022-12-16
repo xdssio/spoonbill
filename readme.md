@@ -20,53 +20,73 @@ For each key-value store, there are two classes:
 2. **StringDict** is the counterpart, where the keys and values are strings. This allows for efficient scans of keys and
    values, but you can only store strings.
 
-## Key Value operations
+## Dictionaries operations
 
 * For scan operations, you need to use a keys as strings.
 
-| operation   | InMemoryDict | RedisDict  | LmdbDict | PysosDict | DynamoDB | Datastore | MongoDB |
-|-------------|--------------|------------|----------|-----------|----------|-----------|---------|
-| set         | √            | √          | √        | √         | √         |           |         | 
-| get         | √            | √          | √        | √         | √         |           |         |
-| pop         | √            | √          | √        | √         | √         |           |         |
-| delete      | √            | √          | √        | √         | √         |           |         |
-| len         | √            | √          | √        | √         | √         |           |         |
-| eq          | √            | √          | √        | √         | √         |           |         |
-| keys        | √            | √          | √        | √         | √         |           |         |
-| values      | √            | √          | √        | √         | √         |           |         |
-| items       | √            | √          | √        | √         | √         |           |         |
-| iter        | √            | √          | √        | √         | √         |           |         |
-| contains    | √            | √          | √        | √         | √         |           |         |
-| update      | √            | √          | √        | √         | √         |           |         |
-| get_batch   | √            | √          | √        | √         | √         |           |         |
-| set_batch   | √            | √          | √        | √         | √         |           |         |
-| scan        | √            | √          | √        | √         | √         |           |         |
-| persistence | X            | √          | √        | √         | √         |           |         |
-| key type    | Any          | Any/String |          |           |           |           |         |
+| Operation                    | InMemoryDict | RedisDict                                  | LmdbDict                                            | PysosDict                                   | DynamoDBDict                                     | FireStoreDict                                               |
+|------------------------------|--------------|--------------------------------------------|-----------------------------------------------------|---------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|
+| backend                      | python dict  | [Redis](https://github.com/redis/redis-py) | [Lmdb](https://github.com/Dobatymo/lmdb-python-dbm) | [Pysos](https://github.com/dagnelies/pysos) | [AWS DynamoDB](https://aws.amazon.com/dynamodb/) | [GCP Firestore](https://firebase.google.com/docs/firestore) |
+| set                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           | 
+| get                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| pop                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| delete                       | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| len                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| eq                           | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| keys                         | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| values                       | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| items                        | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| iter                         | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| contains                     | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| update                       | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| get_batch                    | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| set_batch                    | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| persistence                  | X            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| save/load                    | √            | X                                          | X                                                   | X                                           | X                                                | X                                                           |
+| key type (Not strict/strict) | Any          | Any/String                                 | Any                                                 | Any                                         | String                                           | Any/String                                                  |
 
 ## Usage
 
 All the classes have the same interface, so you can use them interchangeably.
 
 * The *strict* argument is used to control if to encode the keys and values with cloudpickle or keep original behavior.
-  if strict is False, any key and value can be used, otherwise it depands on the backend.
+  if strict is False, any key and value can be used, otherwise it depends on the backend.
+
+## APIs
+```python
+from spoonbill.dictionaries import InMemoryDict
+from spoonbill.dictionaries import InMemoryDict
+
+store = InMemoryDict()   
+store["key"] = "value"
+store["key"] == "value"
+store.set("key", "value")
+store.get("key", None)
+store.keys(pattern="*", count=10)
+store.items(pattern="*", count=10)
+store.values()
+'key' in store
+del store['key']
+store.update({'key': 'value'})
+store.get_batch(['key'])
+store.set_batch(['key'], ['value'])
+len(store)
+for key in store: pass    
+store.pop('key', None)
+store.popitem()
+```
 
 ### InMemoryDict
 
 This object is to have a common interface for all the key-value stores. It is great for testing and for the average use
 case, to have a common interface which includes the scan operation.
 
-* When using scan, the keys are evaluated as strings to match with the pattern.
 * Save/load are implemented to save/load the whole dict to/from a file, locally or on the cloud
   using [cloudpathlib](https://cloudpathlib.drivendata.org/stable/).
 
 ```python
-from spoonbill import InMemoryDict
-
-store = InMemoryDict.open()  # or InMemoryDict()
-store["key"] = "value"
-assert store["key"] == "value"
-assert list(store.scan("key*")) == ["key"]
+from spoonbill.dictionaries import InMemoryDict
+store = InMemoryDict()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 ``` 
 
 ### LmdbDict
@@ -76,13 +96,9 @@ persistence
 ```pip install lmdbm```
 
 ```python
-from spoonbill import LmdbDict
+from spoonbill.dictionaries import LmdbDict
 
 store = LmdbDict.open('tmp.db')
-store["key"] = "value"
-assert store["key"] == "value"
-assert list(store.scan("key*")) == ["key"]
-
 ```
 
 ### PysosDict pySOS: Simple Objects Storage
@@ -93,12 +109,9 @@ either need persistence, are too big to fit in memory or both.
 ```pip install pysos```
 
 ```python
-from spoonbill import PysosDict
+from spoonbill.dictionaries import PysosDict
 
 store = PysosDict.open('tmp.db')
-store["key"] = "value"
-assert store["key"] == "value"
-
 ```
 
 ### RedisDict
@@ -107,27 +120,30 @@ As default, the RedisDict act as a python dict, encode every key and value to by
 store any python object, but it is not efficient for scan operations. It also make the scan a bit unstable as only
 string keys are supported.
 
-The *as_string* parameter allows to store the keys and values as strings (default redis), which allows for efficient
-scan operations.
+The *strict* parameter allows to store the keys and values as strings (default redis), which allows for efficient scan
+operations.
 
 ```python
-from spoonbill import RedisDict
+from spoonbill.dictionaries import RedisDict
 
 store = RedisDict.from_url("redis://localhost:6379/1")
+store["key"] = "value"
+store["key"] == "value"
+
 store[1] = lambda x: x + 1  # anything goes using cloudpickle
 assert store[1](1) == 2
 
-store.update({'1': 1, '11': 1, 1: -1, 11: -1})
-assert list(store.scan('1*')) == ['1', '11']  # because scan apply only on string keys
-
-# set as_string to True to use redis with its default behaviour which turns keys and values to strings
-store = RedisDict.from_url("redis://localhost:6379/1", as_strings=True)
+# set strict to True to use redis with its default behaviour which turns keys and values to strings
+store = RedisDict.from_url("redis://localhost:6379/1", strict=True)
 store[1] = 1
 assert store[1] == store["1"] == "1"
 
-store.update({'1': 1, '11': 1, 111: -111})
-assert list(store.scan('1*')) == ['111', '1', '11']  # redis turn every key to string
+assert list(store.keys('1*')) == ['111', '1', '11']  # redis turn every key to string
+assert list(store.scan('1*')) == ['111', '1', '11']
 ```
+
+Question: What is the difference between *keys* and *scan*?     
+Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non-blocking.
 
 ### DynamoDBDict
 
@@ -136,5 +152,27 @@ pip install boto3 cerealbox
 ```
 
 ```python 
+```
+
+### FireStoreDict
+
+Prerequisites:
+
+1. Create a project in Google Cloud Platform
+2. Eneble Firestore API
+3. Create a service account and download the json file
+4. Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the path of the json file
+5. Create a database in Firestore
+6. Create a collection in the database
+
+```bash
+pip install --upgrade google-cloud-firestore 
+```
+
+```python
+from spoonbill.dictionaries import FireStoreDict
+
+store = FireStoreDict.open(
+    table_name="my-collection")  # this rest of the credentials are picked up from the environment variables
 ```
 
