@@ -1,7 +1,5 @@
-from spoonbill.dictionaries import KeyValueStore, KEY, VALUE
+from spoonbill.dictionaries import KeyValueStore, RANDOM_VALUE, VALUE
 from google.cloud import firestore
-
-RANDOM_VALUE = '#5f1a7da3a2b04d629231108bb6548dcb#'
 
 
 class FireStoreDict(KeyValueStore):
