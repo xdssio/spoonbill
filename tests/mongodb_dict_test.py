@@ -5,7 +5,7 @@ import pytest
 
 @pytest.mark.skip("Run this test manually")
 def test_dynamodb():
-    self = store = MongoDBDict.open('tmp')
+    self = store = MongoDBDict.open()
     store._flush()
 
     store['test'] = 'test'

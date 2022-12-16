@@ -2,13 +2,15 @@ import re
 from spoonbill.dictionaries import KeyValueStore, VALUE, KEY
 from pymongo import MongoClient
 import pymongo
+
 ID = '_id'
 
 
 class MongoDBDict(KeyValueStore):
 
-    def __init__(self, database: str = 'db', collection: str = 'collection'):
-        self.client = MongoClient()
+    def __init__(self, uri: str = None, database: str = 'db', collection: str = 'collection'):
+
+        self.client = MongoClient(uri) if uri else MongoClient()
         self.database = self.client[database]
         self.collection = None
         self.strict = False
@@ -19,8 +21,8 @@ class MongoDBDict(KeyValueStore):
         self.collection.create_index('key', unique=True)
 
     @classmethod
-    def open(cls, database: str = 'db', collection: str = 'container'):
-        return MongoDBDict(database=database, collection=collection)
+    def open(cls, uri: str = None, database: str = 'db', collection: str = 'container'):
+        return MongoDBDict(uri=uri, database=database, collection=collection)
 
     def _list_collections(self):
         return self.database.list_collection_names()
@@ -86,32 +88,28 @@ class MongoDBDict(KeyValueStore):
             yield self.decode_key(item.get(VALUE))
 
     def _update(self, items):
-        bulk = self.collection.bulk_write()
-
-        for id in ids:
-            bulk.find({'_id': id}).update({'$set': {"isBad": "N"}})
-
-        bulk.execute()
-        self.collection.insert_many(
-            [{KEY: self.encode_key(key),
-              ID: self.encode_key(key),
-              VALUE: self.encode_value(value)} for key, value in
-             items])
+        operations = []
+        for key, value in items:
+            key, value = self.encode_key(key), self.encode_value(value)
+            operations.append(
+                pymongo.ReplaceOne(filter={ID: key},
+                                   replacement={VALUE: value, KEY: key}, upsert=True))
+        self.collection.bulk_write(operations)
+        return self
 
     def update(self, d):
         self._update(d.items())
         return self
 
     def get_batch(self, keys, default=None):
-        for key in keys:
-            yield self.get(key, default)
+        encoded_keys = [self.encode_key(key) for key in keys]
+        for key in self.collection.find({ID: {'$in': encoded_keys}}):
+            yield self.decode_value(key.get(VALUE))
 
     def set_batch(self, keys, values):
-        for key, value in zip(keys, values):
-            self[key] = value
+        self._update(zip(keys, values))
 
     def _flush(self):
-        self.collection.bulk_write([pymongo.DeleteMany({})])
         name = self.collection.name
         self.collection.drop()
         self._create_collections(name)
