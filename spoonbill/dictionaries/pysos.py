@@ -29,8 +29,10 @@ class PysosDict(KeyValueStore):
         self.strict = strict
 
     def _flush(self):
+        count = len(self)
         os.remove(self.store_path)
         self._store = pysos.Dict(self.store_path)
+        return count
 
     def set(self, key, value):
         self[key] = value

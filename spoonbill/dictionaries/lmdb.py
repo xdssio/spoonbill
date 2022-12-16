@@ -38,7 +38,9 @@ class LmdbDict(ContextStore):
         self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
 
     def _flush(self):
+        count = len(self)
         remove_lmdbm(self.store_path)
+        return count
 
     @property
     def map_size(self):

@@ -2,7 +2,7 @@ import typing
 
 import contextlib
 import logging
-from spoonbill.dictionaries import KeyValueStore
+from spoonbill.dictionaries import KeyValueStore, KEY, VALUE
 import boto3
 import decimal
 from cerealbox.dynamo import from_dynamodb_json, as_dynamodb_json
@@ -43,9 +43,9 @@ class DynamoDBDict(KeyValueStore):
         table_name = table_name or self.table_name
 
         if not table_name in self._list_tables():
-            key_schema = key_schema or kwargs.pop('AttributeDefinitions', [{'AttributeName': 'key', 'KeyType': 'HASH'}])
+            key_schema = key_schema or kwargs.pop('AttributeDefinitions', [{'AttributeName': KEY, 'KeyType': 'HASH'}])
             attribute_definitions = attribute_definitions or kwargs.pop('AttributeDefinitions', [
-                {'AttributeName': 'key', 'AttributeType': self.key_type}])
+                {'AttributeName': KEY, 'AttributeType': self.key_type}])
             billing_mode = billing_mode or kwargs.pop('BillingMode', 'PAY_PER_REQUEST')
             return self.client.create_table(TableName=table_name, KeySchema=key_schema,
                                             AttributeDefinitions=attribute_definitions,
@@ -63,12 +63,12 @@ class DynamoDBDict(KeyValueStore):
         return name in self.client.list_tables()['TableNames']
 
     def _to_dynamodb_key(self, key):
-        return {'key': as_dynamodb_json(key)}
+        return {KEY: as_dynamodb_json(key)}
 
     def _to_dynamodb_item(self, key, value):
 
         value = as_dynamodb_json(value)
-        return {'key': {self.key_type: key}, 'value': value}
+        return {KEY: {self.key_type: key}, VALUE: value}
 
     def _from_dynamodb_item(self, item):
         def _convert(item):
@@ -84,7 +84,7 @@ class DynamoDBDict(KeyValueStore):
 
     def _get_item(self, key: str):
         response = self.client.get_item(TableName=self.table_name, Key=self._to_dynamodb_key(key))
-        return self._from_dynamodb_item(response['Item']['value'])
+        return self._from_dynamodb_item(response['Item'][VALUE])
 
     def _put_item(self, key: str, value: str):
         item = self._to_dynamodb_item(key, value)
@@ -124,7 +124,7 @@ class DynamoDBDict(KeyValueStore):
                     params['ExclusiveStartKey'] = start_key
                 response = self.client.scan(**params)
                 for item in response.get('Items', []):
-                    yield self._from_dynamodb_item(item)['key']
+                    yield self._from_dynamodb_item(item)[KEY]
                 start_key = response.get('LastEvaluatedKey', None)
                 done = start_key is None
         except botocore.exceptions.ClientError as err:
@@ -154,29 +154,30 @@ class DynamoDBDict(KeyValueStore):
             raise
 
     def keys(self, pattern: str = None, count: int = None):
-        params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': ['key']}
+        params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
         for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
-            yield item['key']
+            yield item[KEY]
 
     def values(self, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
         for item in self._simple_scan(params, limit):
-            yield item['value']
+            yield item[VALUE]
 
     def items(self, pattern: str = None, count: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
         for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
-            yield item['key'], item['value']
+            yield item[KEY], item[VALUE]
 
     def _flush(self):
         description = self.description['Table']
+        count = len(self)
         self._delete_table(self.table_name)
         time.sleep(2)
         self.create_table(table_name=self.table_name,
                           key_schema=description['KeySchema'],
                           attribute_definitions=description['AttributeDefinitions'],
                           billing_mode=description['BillingModeSummary']['BillingMode'])
-        return True
+        return count
 
     def pop(self, key, default=None):
         with contextlib.suppress(KeyError):
@@ -195,14 +196,14 @@ class DynamoDBDict(KeyValueStore):
         responses = self.client.batch_get_item(
             RequestItems={self.table_name: {'Keys': [self._to_dynamodb_key(key) for key in keys]}})
         for item in responses['Responses'][self.table_name]:
-            yield self._from_dynamodb_item(item)['value']
+            yield self._from_dynamodb_item(item)[VALUE]
 
     def _insert_items(self, items):
         table = boto3.resource('dynamodb').Table(self.table_name)
         count = 0
         with table.batch_writer() as batch:
             for key, value in items:
-                response = batch.put_item(Item={'key': key, 'value': value})
+                response = batch.put_item(Item={KEY: key, VALUE: value})
                 count += 1
         return count
 

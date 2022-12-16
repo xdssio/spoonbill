@@ -139,10 +139,9 @@ class RedisDict(KeyValueStore, Strict):
             yield self.decode_key(key), self.decode_value(value)
 
     def _flush(self):
-        return self._store.flushdb()
-
-    def _flushall(self):
-        return self._store.flushall()
+        count = len(self)
+        self._store.flushdb()
+        return count
 
     @classmethod
     def from_url(cls, url: str, as_strings: bool = False, **kwargs):

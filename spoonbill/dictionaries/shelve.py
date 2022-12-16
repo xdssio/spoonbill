@@ -17,8 +17,9 @@ class ShelveStore(ContextStore, Strict):
         return ShelveStore(path=path, strict=strict)
 
     def _flush(self):
+        count = len(self)
         with contextlib.suppress(FileNotFoundError):
             os.remove(self.store_path)
-        return True
+        return count
 
     open = from_db

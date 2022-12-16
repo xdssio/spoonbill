@@ -30,8 +30,9 @@ class InMemoryDict(KeyValueStore):
         return True
 
     def _flush(self):
+        ret = len(self)
         self._store = {}
-        return True
+        return ret
 
     @classmethod
     def open(self, path=None, *args, **kwargs):
