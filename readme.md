@@ -53,17 +53,18 @@ All the classes have the same interface, so you can use them interchangeably.
   if strict is False, any key and value can be used, otherwise it depends on the backend.
 
 ## APIs
+
 ```python
 from spoonbill.dictionaries import InMemoryDict
 from spoonbill.dictionaries import InMemoryDict
 
-store = InMemoryDict()   
+store = InMemoryDict()
 store["key"] = "value"
 store["key"] == "value"
 store.set("key", "value")
 store.get("key", None)
-store.keys(pattern="*", count=10)
-store.items(pattern="*", count=10)
+store.keys(pattern="*", count=10)  # only correct when using string keys
+store.items(pattern="*", count=10)  # only correct when using string keys
 store.values()
 'key' in store
 del store['key']
@@ -71,7 +72,7 @@ store.update({'key': 'value'})
 store.get_batch(['key'])
 store.set_batch(['key'], ['value'])
 len(store)
-for key in store: pass    
+for key in store: pass
 store.pop('key', None)
 store.popitem()
 ```
@@ -86,6 +87,7 @@ case, to have a common interface which includes the scan operation.
 
 ```python
 from spoonbill.dictionaries import InMemoryDict
+
 store = InMemoryDict()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 ``` 
 
