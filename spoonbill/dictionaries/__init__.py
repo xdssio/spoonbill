@@ -5,6 +5,9 @@ import warnings
 import cloudpickle
 import re
 
+KEY = 'key'
+VALUE = 'value'
+
 
 class Strict:
     encoding: str = 'cp1252'
@@ -104,7 +107,7 @@ class KeyValueStore(Strict):
                 if isinstance(item, tuple):
                     key = item[0]
                 elif isinstance(item, dict):
-                    key = item.get('key')
+                    key = item.get(KEY)
                 else:
                     key = item
                 key = self.decode_key(key)
@@ -274,3 +277,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .dynamodb import DynamoDBDict
+
+with contextlib.suppress(ImportError):
+    from .firestore import FireStoreDict
