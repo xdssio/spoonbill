@@ -24,26 +24,26 @@ For each key-value store, there are two classes:
 
 * For scan operations, you need to use a keys as strings.
 
-| Operation                    | InMemoryDict | RedisDict                                  | LmdbDict                                            | PysosDict                                   | DynamoDBDict                                     | FireStoreDict                                               |
-|------------------------------|--------------|--------------------------------------------|-----------------------------------------------------|---------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|
-| backend                      | python dict  | [Redis](https://github.com/redis/redis-py) | [Lmdb](https://github.com/Dobatymo/lmdb-python-dbm) | [Pysos](https://github.com/dagnelies/pysos) | [AWS DynamoDB](https://aws.amazon.com/dynamodb/) | [GCP Firestore](https://firebase.google.com/docs/firestore) |
-| set                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           | 
-| get                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| pop                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| delete                       | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| len                          | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| eq                           | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| keys                         | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| values                       | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| items                        | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| iter                         | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| contains                     | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| update                       | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| get_batch                    | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| set_batch                    | √            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| persistence                  | X            | √                                          | √                                                   | √                                           | √                                                | √                                                           |
-| save/load                    | √            | X                                          | X                                                   | X                                           | X                                                | X                                                           |
-| key type (Not strict/strict) | Any          | Any/String                                 | Any                                                 | Any                                         | String                                           | Any/String                                                  |
+| Operation                    | InMemoryDict | BucketDict                 | RedisDict                                  | LmdbDict                                            | PysosDict                                   | DynamoDBDict                                     | FireStoreDict                                               |
+|------------------------------|--------------|----------------------------|--------------------------------------------|-----------------------------------------------------|---------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|
+| backend                      | python dict  | S3/GS/AZ buckets           | [Redis](https://github.com/redis/redis-py) | [Lmdb](https://github.com/Dobatymo/lmdb-python-dbm) | [Pysos](https://github.com/dagnelies/pysos) | [AWS DynamoDB](https://aws.amazon.com/dynamodb/) | [GCP Firestore](https://firebase.google.com/docs/firestore) |
+| set                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           | 
+| get                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| pop                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| delete                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| len                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| eq                           | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| keys                         | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| values                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| items                        | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| iter                         | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| contains                     | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| update                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| get_batch                    | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| set_batch                    | √            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| persistence                  | X            | √                          | √                                          | √                                                   | √                                           | √                                                | √                                                           |
+| save/load                    | √            | X                          | X                                          | X                                                   | X                                           | X                                                | X                                                           |
+| key type (Not strict/strict) | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | String                                           | Any/String                                                  |
 
 ## Usage
 
@@ -91,10 +91,22 @@ from spoonbill.dictionaries import InMemoryDict
 store = InMemoryDict()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 ``` 
 
+### BucketDict
+
+Requirements:   
+```pip install cloudpathlib```
+
+This dict is bucket by a file locally or on a cloud provider (S3, GS, AZ). It is **very slow**, but good for as a cheap
+persisted key-value store.
+
+For faster applications with cloud persistence, use InMemoryDict and save/load to the cloud.
+
 ### LmdbDict
 
 LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library. It is a fast key-value with memory-mapped
 persistence
+
+Requirements:   
 ```pip install lmdbm```
 
 ```python
@@ -108,6 +120,7 @@ store = LmdbDict.open('tmp.db')
 A wrapper around the [pysos](https://github.com/dagnelies/pysos) library. This is ideal for lists or dictionaries which
 either need persistence, are too big to fit in memory or both.
 
+Requirements:   
 ```pip install pysos```
 
 ```python
@@ -149,11 +162,10 @@ Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non
 
 ### DynamoDBDict
 
+Requirements:
+
 ```bash
 pip install boto3 cerealbox
-```
-
-```python 
 ```
 
 ### FireStoreDict
@@ -166,6 +178,7 @@ Prerequisites:
 4. Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the path of the json file
 5. Create a database in Firestore
 6. Create a collection in the database
+7. Install google-cloud-firestore with
 
 ```bash
 pip install --upgrade google-cloud-firestore 
@@ -174,7 +187,7 @@ pip install --upgrade google-cloud-firestore
 ```python
 from spoonbill.dictionaries import FireStoreDict
 
-store = FireStoreDict.open(
-    table_name="my-collection")  # this rest of the credentials are picked up from the environment variables
+# this rest of the credentials are picked up from the file in the GOOGLE_APPLICATION_CREDENTIALS environment variable
+store = FireStoreDict.open(table_name="my-collection")
 ```
 
