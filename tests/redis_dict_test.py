@@ -24,9 +24,7 @@ def test_redis_open():
 
 def test_redis_dict():
     store = RedisDict.open('redis://localhost:6379/1')
-    list(store.keys(count=1))
-    list(store.values())
-    assert store._flush()
+    store._flush()
     store['test'] = 'test'
     assert len(store) == 1
     assert store['test'] == store.get('test') == 'test'
