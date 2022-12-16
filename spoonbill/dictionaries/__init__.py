@@ -274,3 +274,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .buckets import BucketDict
+
+with contextlib.suppress(ImportError):
+    from .cosmos import CosmosDBDict
