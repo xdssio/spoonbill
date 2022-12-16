@@ -277,3 +277,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .cosmos import CosmosDBDict
+
+with contextlib.suppress(ImportError):
+    from .mongodb import MongoDBDict
