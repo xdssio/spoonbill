@@ -7,6 +7,7 @@ import re
 
 KEY = 'key'
 VALUE = 'value'
+RANDOM_VALUE = '#5f1a7da3a2b04d629231108bb6548dcb#'
 
 
 class Strict:
@@ -171,16 +172,6 @@ class KeyValueStore(Strict):
             if pattern.match(str(key)):
                 yield key
 
-    def scan_items(self, pattern: str = None, count: int = None, **kwargs):
-        if count is not None:
-            warnings.warn('count is not supported in MemoryStore')
-        if not pattern:
-            pattern = "[\s\S]*"
-        pattern = re.compile(pattern)
-        for key in self.keys():
-            if pattern.match(str(key)):
-                yield key, self.get(key)
-
     def __repr__(self):
         size = len(self)
         items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
@@ -280,3 +271,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .firestore import FireStoreDict
+
+with contextlib.suppress(ImportError):
+    from .buckets import BucketDict
