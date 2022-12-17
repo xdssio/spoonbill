@@ -110,10 +110,12 @@ class RedisDict(KeyValueStore, Strict):
                         continue
                     yield self.decode_key(key), self.decode_value(value)
 
-    def keys(self, pattern: str = None, *args, **kwargs):
+    def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         if pattern:
             kwargs['pattern'] = pattern
-        for key in self._store.keys(*args, **kwargs):
+        for i, key in enumerate(self._store.keys(*args, **kwargs)):
+            if i == limit:
+                break
             yield self.decode_key(key)
 
     def _items(self, pattern: str = None, *args, **kwargs):
@@ -132,10 +134,12 @@ class RedisDict(KeyValueStore, Strict):
                 continue
             yield self.decode_value(value)
 
-    def items(self, pattern: str = None, *args, **kwargs):
-        for key, value in self._items(pattern, *args, **kwargs):
+    def items(self, pattern: str = None, limit:int=None, *args, **kwargs):
+        for i, (key, value) in enumerate(self._items(pattern, *args, **kwargs)):
             if value is None:
                 continue
+            if i == limit:
+                break
             yield self.decode_key(key), self.decode_value(value)
 
     def _flush(self):
@@ -144,7 +148,7 @@ class RedisDict(KeyValueStore, Strict):
         return count
 
     @classmethod
-    def from_url(cls, url: str, as_strings: bool = False, **kwargs):
+    def open(cls, url: str, as_strings: bool = False, **kwargs):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
         return RedisDict(store=redis.Redis.from_url(url, **kwargs), strict=as_strings)
 
@@ -158,4 +162,3 @@ class RedisDict(KeyValueStore, Strict):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
         return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=as_strings)
 
-    open = from_url

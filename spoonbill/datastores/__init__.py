@@ -96,11 +96,11 @@ class KeyValueStore(Strict):
                 return False
         return True
 
-    def _to_iter(self, sequence: typing.Sequence, pattern: str = None, count: int = None):
+    def _to_iter(self, sequence: typing.Sequence, pattern: str = None, limit: int = None):
         if pattern:
             pattern = re.compile(pattern)
         for i, item in enumerate(sequence):
-            if i == count:
+            if i == limit:
                 break
             if not pattern:
                 yield item
@@ -200,9 +200,9 @@ class ContextStore(KeyValueStore, Strict):
         with self.manager.open(self.store_path, **self.open_params) as store:
             return len(store)
 
-    def keys(self, pattern: str = None, count: int = None, **kwargs):
+    def keys(self, pattern: str = None, limit: int = None, **kwargs):
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for key in self._to_iter(store.keys(), pattern=pattern, count=count):
+            for key in self._to_iter(store.keys(), pattern=pattern, limit=limit):
                 yield self.decode_key(key)
 
     def values(self):
@@ -210,9 +210,9 @@ class ContextStore(KeyValueStore, Strict):
             for value in store.values():
                 yield self.decode_value(value)
 
-    def items(self, pattern: str = None, count: int = None, **kwargs):
+    def items(self, pattern: str = None, limit: int = None, **kwargs):
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for item in self._to_iter(store.items(), pattern=pattern, count=count):
+            for item in self._to_iter(store.items(), pattern=pattern, limit=limit):
                 yield self.decode_key(item[0]), self.decode_value(item[1])
 
     def get(self, key, default=None):

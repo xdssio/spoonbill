@@ -181,9 +181,9 @@ class DynamoDBDict(KeyValueStore):
                 err.response['Error']['Code'], err.response['Error']['Message'])
             raise
 
-    def keys(self, pattern: str = None, count: int = None):
+    def keys(self, pattern: str = None, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
-        for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
+        for item in self._to_iter(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
             yield item[0]
 
     def values(self, limit: int = None):
@@ -191,9 +191,9 @@ class DynamoDBDict(KeyValueStore):
         for item in self._simple_scan(params, limit):
             yield item[1]
 
-    def items(self, pattern: str = None, count: int = None):
+    def items(self, pattern: str = None, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
-        for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
+        for item in self._to_iter(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
             yield item
 
     def _flush(self):

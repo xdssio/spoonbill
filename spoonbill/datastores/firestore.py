@@ -63,12 +63,12 @@ class FireStoreDict(KeyValueStore):
     def set(self, key, value):
         return self._put_item(key, value)
 
-    def keys(self, pattern: str = None, count: int = None):
+    def keys(self, pattern: str = None, limit: int = None):
         def _scan():
             for doc in self.collection.stream():
                 yield self.decode_key(doc.id)
 
-        for item in self._to_iter(_scan(), pattern=pattern, count=count):
+        for item in self._to_iter(_scan(), pattern=pattern, limit=limit):
             yield item
 
     def values(self, limit: int = None):
@@ -81,14 +81,14 @@ class FireStoreDict(KeyValueStore):
         for item in self._to_iter(_scan()):
             yield item
 
-    def items(self, pattern: str = None, count: int = None):
+    def items(self, pattern: str = None, limit: int = None):
         def _scan():
             for doc in self.collection.stream():
                 value = doc.to_dict().get(VALUE)
                 if value:
                     yield self.decode_key(doc.id), self.decode_value(value)
 
-        for item in self._to_iter(_scan(), pattern=pattern, count=count):
+        for item in self._to_iter(_scan(), pattern=pattern, limit=limit):
             yield item
 
     def pop(self, key, default=None):

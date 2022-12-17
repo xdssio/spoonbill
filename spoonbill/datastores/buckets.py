@@ -92,22 +92,22 @@ class BucketDict(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, pattern: str = None, count: int = None):
+    def _iter(self, pattern: str = None, limit: int = None):
         iterator = self.bucket.glob(pattern) if pattern is not None else self.bucket.iterdir()
         for i, key in enumerate(iterator):
-            if i == count:
+            if i == limit:
                 break
             if key.name == self.COUNT_KEY:
                 continue
             yield key
 
-    def keys(self, pattern: str = None, count: int = None):
-        for key in self._iter(pattern, count):
+    def keys(self, pattern: str = None, limit: int = None):
+        for key in self._iter(pattern, limit):
             if key.is_file():
                 yield self.decode_key(key.name)
 
-    def items(self, pattern: str = None, count: int = None):
-        for key in self._iter(pattern, count):
+    def items(self, pattern: str = None, limit: int = None):
+        for key in self._iter(pattern, limit):
             if key.is_file():
                 yield self.decode_key(key.name), self.decode_value(key.read_text())
 

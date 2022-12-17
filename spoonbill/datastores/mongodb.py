@@ -68,23 +68,23 @@ class MongoDBDict(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, pattern: str = None, count: int = None):
+    def _iter(self, pattern: str = None, limit: int = None):
         params = {}
         if pattern is not None:
             pattern = re.compile(pattern, re.IGNORECASE)
             params = {KEY: pattern}
-        return self.collection.find(**params).limit(count) if count else self.collection.find(params)
+        return self.collection.find(**params).limit(limit) if limit else self.collection.find(params)
 
-    def keys(self, pattern: str = None, count: int = None):
-        for item in self._iter(pattern=pattern, count=count):
+    def keys(self, pattern: str = None, limit: int = None):
+        for item in self._iter(pattern=pattern, limit=limit):
             yield self.decode_key(item.get(KEY))
 
-    def items(self, pattern: str = None, count: int = None):
-        for item in self._iter(pattern=pattern, count=count):
+    def items(self, pattern: str = None, limit: int = None):
+        for item in self._iter(pattern=pattern, limit=limit):
             yield self.decode_key(item.get(KEY)), self.decode_value(item.get(VALUE))
 
-    def values(self, pattern: str = None, count: int = None):
-        for item in self._iter(pattern=pattern, count=count):
+    def values(self, pattern: str = None, limit: int = None):
+        for item in self._iter(pattern=pattern, limit=limit):
             yield self.decode_key(item.get(VALUE))
 
     def _update(self, items):
@@ -124,7 +124,7 @@ class MongoDBDict(KeyValueStore):
     def popitem(self):
         if len(self) == 0:
             raise KeyError('popitem(): dictionary is empty')
-        item = next(self._iter(count=1))
+        item = next(self._iter(limit=1))
         value = self.decode_value(item.get(VALUE))
         self._delete_item(item.get(KEY))
         return value

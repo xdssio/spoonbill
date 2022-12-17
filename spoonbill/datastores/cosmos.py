@@ -71,28 +71,28 @@ class CosmosDBDict(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, pattern: str = None, count: int = None):
+    def _iter(self, pattern: str = None, limit: int = None):
         query = f"SELECT * FROM {self.container.id} c"
         if pattern:
             query = query + ' WHERE c.key LIKE "%{}%"'.format(pattern)
-        if count:
-            query = query + f" OFFSET 0 LIMIT {count}"
+        if limit:
+            query = query + f" OFFSET 0 LIMIT {limit}"
         for item in self.container.query_items(
                 query=query,
                 enable_cross_partition_query=True
         ):
             yield item
 
-    def keys(self, pattern: str = None, count: int = None):
-        for item in self._iter(pattern=pattern, count=count):
+    def keys(self, pattern: str = None, limit: int = None):
+        for item in self._iter(pattern=pattern, limit=limit):
             yield self.decode_key(item.get(KEY))
 
-    def items(self, pattern: str = None, count: int = None):
-        for item in self._iter(pattern=pattern, count=count):
+    def items(self, pattern: str = None, limit: int = None):
+        for item in self._iter(pattern=pattern, limit=limit):
             yield self.decode_key(item.get(KEY)), self.decode_value(item.get(VALUE))
 
-    def values(self, pattern: str = None, count: int = None):
-        for item in self._iter(pattern=pattern, count=count):
+    def values(self, pattern: str = None, limit: int = None):
+        for item in self._iter(pattern=pattern, limit=limit):
             yield self.decode_key(item.get(VALUE))
 
     def _update(self, items):
@@ -125,7 +125,7 @@ class CosmosDBDict(KeyValueStore):
     def popitem(self):
         if len(self) == 0:
             raise KeyError('popitem(): dictionary is empty')
-        item = next(self._iter(count=1))
+        item = next(self._iter(limit=1))
         value = self.decode_value(item.get(VALUE))
         self._delete_item(item.get(KEY))
         return value

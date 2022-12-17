@@ -62,17 +62,17 @@ class InMemoryDict(KeyValueStore):
             return cloudpathlib.CloudPath(path)
         return pathlib.Path(path)
 
-    def keys(self, pattern: str = None, count: int = None, *args, **kwargs):
-        for key in self._to_iter(self._store.keys(), pattern, count):
+    def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
+        for key in self._to_iter(self._store.keys(), pattern, limit):
             yield self.decode_key(key)
 
-    def values(self, count: int = None):
+    def values(self, limit: int = None):
         for value in self._store.values():
             if value is not None:
                 yield self.decode_value(value)
 
-    def items(self, pattern: str = None, count: int = None):
-        for key, value in self._to_iter(self._store.items(), pattern, count):
+    def items(self, pattern: str = None, limit: int = None):
+        for key, value in self._to_iter(self._store.items(), pattern, limit):
             if value is not None:
                 yield self.decode_key(key), self.decode_value(value)
 
