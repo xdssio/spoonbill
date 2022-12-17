@@ -1,6 +1,6 @@
 import typing
 import logging
-from spoonbill.datastores import KeyValueStore, KEY
+from spoonbill.datastores import KeyValueStore, KEY, VALUE
 import boto3
 import decimal
 import botocore
@@ -10,7 +10,7 @@ logger = logging.getLogger()
 
 ITEM = 'Item'
 DYNAMODB = 'dynamodb'
-VALUE = 'VALUE#'
+
 
 
 class DynamoDBDict(KeyValueStore):
