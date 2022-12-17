@@ -10,13 +10,6 @@ def test_redis_from_connection():
     store._flush()
 
 
-def test_redis_from_url():
-    store = RedisDict.from_url('redis://localhost:6379/1')
-    store[1] = 1
-    assert store[1] == 1
-    store._flush()
-
-
 def test_redis_open():
     store = RedisDict.open('redis://localhost:6379/1')
     store[1] = 1
