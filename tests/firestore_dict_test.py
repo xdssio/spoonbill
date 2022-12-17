@@ -36,9 +36,10 @@ def test_firestore():
     assert store['function'](1) == 2
     store._flush()
 
+    store['stuff'] = {'a': 1, 'b': 2}
 
 def test_firestore_strict():
-    self = store = FireStoreDict.open('tmp', strict=True)
+    store = FireStoreDict.open('tmp', strict=True)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -69,4 +70,7 @@ def test_firestore_strict():
     assert set(store.get_batch([str(i) for i in range(10)])) == set(range(10))
     assert len([1 for _ in store]) == 12  # test iterator
 
-
+    store = FireStoreDict.open('tmp', strict=True)
+    store._flush()
+    store['stuff'] = {'a': 1, 'b': 2}
+    assert store['stuff'] == {'a': 1, 'b': 2}
