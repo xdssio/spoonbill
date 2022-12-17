@@ -1,10 +1,10 @@
-from spoonbill.datastores import KeyValueStore, RANDOM_VALUE, VALUE
+from spoonbill.datastores import KeyValueStore, VALUE
 from google.cloud import firestore
 
 
 class FireStoreDict(KeyValueStore):
 
-    def __init__(self, collection_name: str, strict: bool = False, **kwargs):
+    def __init__(self, collection_name: str, strict: bool = True, **kwargs):
         self.collection_name = collection_name
         self.strict = strict
         self.client = firestore.Client(**kwargs)
@@ -24,15 +24,26 @@ class FireStoreDict(KeyValueStore):
     def _list_tables(self):
         return list(self.client.collections())
 
+    def _to_item(self, value):
+        if self.strict and isinstance(value, dict):
+            return value
+        return {VALUE: self.encode_value(value)}
+
+    def _from_item(self, item):
+        if item is not None:
+            if VALUE in item:
+                item = item[VALUE]
+            return self.decode_value(item)
+
     def _get_item(self, key: str):
         ref = self.collection.document(self.encode_key(key)).get()
         if ref.exists:
-            return self.decode_value(ref.to_dict().get(VALUE))
+            return self._from_item(ref.to_dict())
         return None
 
     def _put_item(self, key: str, value: str):
         ref = self.collection.document(self.encode_key(key))
-        ref.set({VALUE: self.encode_value(value)})
+        ref.set(self._to_item(value))
 
     def _delete_item(self, key: str):
         self.collection.document(self.encode_key(key)).delete()
@@ -74,9 +85,7 @@ class FireStoreDict(KeyValueStore):
     def values(self, limit: int = None):
         def _scan():
             for doc in self.collection.stream():
-                value = doc.to_dict().get(VALUE)
-                if value:
-                    yield self.decode_value(value)
+                yield self._from_item(doc.to_dict())
 
         for item in self._to_iter(_scan()):
             yield item
@@ -84,9 +93,7 @@ class FireStoreDict(KeyValueStore):
     def items(self, pattern: str = None, limit: int = None):
         def _scan():
             for doc in self.collection.stream():
-                value = doc.to_dict().get(VALUE)
-                if value:
-                    yield self.decode_key(doc.id), self.decode_value(value)
+                yield self.decode_key(doc.id), self._from_item(doc.to_dict())
 
         for item in self._to_iter(_scan(), pattern=pattern, limit=limit):
             yield item
@@ -108,7 +115,7 @@ class FireStoreDict(KeyValueStore):
         batch = self.client.batch()
         for i, (key, value) in enumerate(items):
             ref = self.collection.document(self.encode_key(key))
-            batch.set(ref, {VALUE: self.encode_value(value)})
+            batch.set(ref, self._to_item(value))
         batch.commit()
         return i
 
@@ -118,7 +125,8 @@ class FireStoreDict(KeyValueStore):
        :param d: A dictionary like object with items() method
        :return: Count of items inserted
        """
-        return self._update(d.items())
+        self._update(d.items())
+        return self
 
     def set_batch(self, keys, values):
         """

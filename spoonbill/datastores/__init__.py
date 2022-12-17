@@ -6,7 +6,7 @@ import cloudpickle
 import re
 
 KEY = 'key'
-VALUE = 'value'
+VALUE = 'VALUE#'
 RANDOM_VALUE = '#5f1a7da3a2b04d629231108bb6548dcb#'
 
 

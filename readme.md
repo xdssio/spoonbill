@@ -64,8 +64,8 @@ store["key"] = "value"
 store["key"] == "value"
 store.set("key", "value")
 store.get("key", None)
-store.keys(pattern="*", count=10)  # only correct when using string keys
-store.items(pattern="*", count=10)  # only correct when using string keys
+store.keys(pattern="*", limit=10)  # only correct when using string keys
+store.items(pattern="*", limit=10)  # only correct when using string keys
 store.values()
 'key' in store
 del store['key']
@@ -163,8 +163,8 @@ Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non
 
 ### DynamoDBDict
 Notes:
-* Keys are always strings ('S'), numbers ('N') or bytes ('B').
 * It is always recommended to set values which are a dict {attribute_name: value} to enjoy all the dynamodb features.
+* Keys are always strings ('S'), numbers ('N') or bytes ('B').
 * If you set a primitive number value, it will return as float (:
 * cerealbox is required for *get_batch*: ```pip install cerealbox```
 
@@ -176,7 +176,9 @@ pip install boto3
 
 ### FireStoreDict
 Notes:
-Prerequisites:
+* It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the firestore features.   
+  * Example: `store['key'] = {'feature': 'value'}`   
+Prerequisites:   
 
 1. Create a project in Google Cloud Platform
 2. Enable Firestore API
