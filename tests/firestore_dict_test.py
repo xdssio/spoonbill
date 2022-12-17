@@ -1,4 +1,4 @@
-from spoonbill.dictionaries import FireStoreDict
+from spoonbill.datastores import FireStoreDict
 
 
 def test_firestore():

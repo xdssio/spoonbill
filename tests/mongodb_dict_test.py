@@ -1,4 +1,4 @@
-from spoonbill.dictionaries import MongoDBDict
+from spoonbill.datastores import MongoDBDict
 import time
 import pytest
 

@@ -1,4 +1,6 @@
-from spoonbill.dictionaries import RedisDict
+import redis
+import pytest
+from spoonbill.datastores import RedisDict
 
 
 def test_redis_from_connection():
@@ -19,6 +21,8 @@ def test_redis_open():
     store = RedisDict.open('redis://localhost:6379/1')
     store[1] = 1
     assert store[1] == 1
+    store['test'] = {'1': 1}
+    assert store['test'] == {'1': 1}
     store._flush()
 
 
@@ -61,7 +65,7 @@ def test_redis_dict():
     store._flush()
 
 
-def test_redis_as_string():
+def test_redis_strict():
     store = RedisDict.open('redis://localhost:6379/1', as_strings=True)
     store._flush()
     store[1] = 1
@@ -74,3 +78,6 @@ def test_redis_as_string():
     store[2] = 2
     assert set(store.scan('1*')) == set([('1', '1'), ('11', '11')])
     assert set(store.keys('1*')) == set(['1', '11'])
+
+    with pytest.raises(redis.exceptions.DataError):
+        store['1'] = {'1': 1}

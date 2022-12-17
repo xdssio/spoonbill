@@ -1,5 +1,5 @@
 from tempfile import TemporaryDirectory
-from spoonbill.dictionaries import InMemoryDict
+from spoonbill.datastores import InMemoryDict
 
 
 def test_dict():

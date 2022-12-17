@@ -4,16 +4,21 @@ import re
 from typing import Sequence
 
 import cloudpickle
-from spoonbill.dictionaries import KeyValueStore
+from spoonbill.datastores import KeyValueStore
 
 
 class InMemoryDict(KeyValueStore):
     """
-    A key-value store that dictionaries everything in memory.
+    A key-value store that datastores everything in memory.
     Practically a python dictionary
+
     """
 
     def __init__(self, store: dict = None, strict: bool = False):
+        """
+        :param store: a dictionary to use as the store
+        :param strict: if False, encode and decode keys and values with cloudpickle
+        """
         self._store = store or {}
         self.strict = strict
 
@@ -37,7 +42,7 @@ class InMemoryDict(KeyValueStore):
     @classmethod
     def open(self, path=None, *args, **kwargs):
         """
-        This is a dummy method to make the API consistent with other dictionaries
+        This is a dummy method to make the API consistent with other datastores
         :param args:
         :param kwargs:
         :return:

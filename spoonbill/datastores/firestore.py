@@ -1,4 +1,4 @@
-from spoonbill.dictionaries import KeyValueStore, RANDOM_VALUE, VALUE
+from spoonbill.datastores import KeyValueStore, RANDOM_VALUE, VALUE
 from google.cloud import firestore
 
 

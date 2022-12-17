@@ -56,8 +56,8 @@ All the classes have the same interface, so you can use them interchangeably.
 ## APIs
 
 ```python
-from spoonbill.dictionaries import InMemoryDict
-from spoonbill.dictionaries import InMemoryDict
+from spoonbill.datastores import InMemoryDict
+from spoonbill.datastores import InMemoryDict
 
 store = InMemoryDict()
 store["key"] = "value"
@@ -87,7 +87,7 @@ case, to have a common interface which includes the scan operation.
   using [cloudpathlib](https://cloudpathlib.drivendata.org/stable/).
 
 ```python
-from spoonbill.dictionaries import InMemoryDict
+from spoonbill.datastores import InMemoryDict
 
 store = InMemoryDict()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 ``` 
@@ -111,7 +111,7 @@ Requirements:
 ```pip install lmdbm```
 
 ```python
-from spoonbill.dictionaries import LmdbDict
+from spoonbill.datastores import LmdbDict
 
 store = LmdbDict.open('tmp.db')
 ```
@@ -125,7 +125,7 @@ Requirements:
 ```pip install pysos```
 
 ```python
-from spoonbill.dictionaries import PysosDict
+from spoonbill.datastores import PysosDict
 
 store = PysosDict.open('tmp.db')
 ```
@@ -140,7 +140,7 @@ The *strict* parameter allows to store the keys and values as strings (default r
 operations.
 
 ```python
-from spoonbill.dictionaries import RedisDict
+from spoonbill.datastores import RedisDict
 
 store = RedisDict.from_url("redis://localhost:6379/1")
 store["key"] = "value"
@@ -162,19 +162,24 @@ Question: What is the difference between *keys* and *scan*?
 Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non-blocking.
 
 ### DynamoDBDict
+Notes:
+* Keys are always strings ('S'), numbers ('N') or bytes ('B').
+* It is always recommended to set values which are a dict {attribute_name: value} to enjoy all the dynamodb features.
+* If you set a primitive number value, it will return as float (:
+* cerealbox is required for *get_batch*: ```pip install cerealbox```
 
 Requirements:
 
 ```bash
-pip install boto3 cerealbox
+pip install boto3 
 ```
 
 ### FireStoreDict
-
+Notes:
 Prerequisites:
 
 1. Create a project in Google Cloud Platform
-2. Eneble Firestore API
+2. Enable Firestore API
 3. Create a service account and download the json file
 4. Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the path of the json file
 5. Create a database in Firestore
@@ -186,7 +191,7 @@ pip install --upgrade google-cloud-firestore
 ```
 
 ```python
-from spoonbill.dictionaries import FireStoreDict
+from spoonbill.datastores import FireStoreDict
 
 # this rest of the credentials are picked up from the file in the GOOGLE_APPLICATION_CREDENTIALS environment variable
 store = FireStoreDict.open(table_name="my-collection")
@@ -203,7 +208,7 @@ Requirements:
 ```pip install azure-cosmos```
 
 ```python
-from spoonbill.dictionaries import CosmosDBDict
+from spoonbill.datastores import CosmosDBDict
 
 store = CosmosDBDict.open(database='db', container='container', endpoint='endpoint', credential='credential')
 ```
@@ -214,9 +219,8 @@ Requirements:
 
 ```pip install pymongo```
 
-
 ```python
-from spoonbill.dictionaries import MongoDBDict
+from spoonbill.datastores import MongoDBDict
 
 store = MongoDBDict.open(uri='mongodb://localhost:27017/')
 ```

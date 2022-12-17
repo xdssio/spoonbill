@@ -1,4 +1,4 @@
-from spoonbill.dictionaries import CosmosDBDict
+from spoonbill.datastores import CosmosDBDict
 import time
 import pytest
 

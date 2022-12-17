@@ -1,6 +1,6 @@
 import os
 import contextlib
-from spoonbill.dictionaries import KeyValueStore, VALUE, KEY
+from spoonbill.datastores import KeyValueStore, VALUE, KEY
 from azure.cosmos import CosmosClient, PartitionKey
 import azure.cosmos.exceptions
 

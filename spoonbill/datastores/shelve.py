@@ -2,7 +2,7 @@ import contextlib
 import os
 
 import shelve
-from spoonbill.dictionaries import ContextStore, Strict
+from spoonbill.datastores import ContextStore, Strict
 
 
 class ShelveStore(ContextStore, Strict):

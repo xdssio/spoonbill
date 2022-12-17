@@ -1,22 +1,24 @@
 import typing
-
-import contextlib
 import logging
-from spoonbill.dictionaries import KeyValueStore, KEY, VALUE
+from spoonbill.datastores import KeyValueStore, KEY
 import boto3
 import decimal
-from cerealbox.dynamo import from_dynamodb_json, as_dynamodb_json
 import botocore
 import time
 
 logger = logging.getLogger()
+
+ITEM = 'Item'
+DYNAMODB = 'dynamodb'
+VALUE = 'VALUE#'
 
 
 class DynamoDBDict(KeyValueStore):
 
     def __init__(self, table_name: str, key_type: str = 'S', **kwargs):
         self.table_name = table_name
-        self.client = boto3.client('dynamodb')
+        self.client = boto3.client(DYNAMODB, **kwargs)
+        self.table = boto3.resource(DYNAMODB, **kwargs).Table(self.table_name)
         self.strict = True
         self.key_type = key_type
         self.create_table()
@@ -62,15 +64,11 @@ class DynamoDBDict(KeyValueStore):
     def _table_exists(self, name: str):
         return name in self.client.list_tables()['TableNames']
 
-    def _to_dynamodb_key(self, key):
-        return {KEY: as_dynamodb_json(key)}
+    @staticmethod
+    def _process_item(item):
+        if VALUE in item:
+            item = item[VALUE]
 
-    def _to_dynamodb_item(self, key, value):
-
-        value = as_dynamodb_json(value)
-        return {KEY: {self.key_type: key}, VALUE: value}
-
-    def _from_dynamodb_item(self, item):
         def _convert(item):
             if isinstance(item, decimal.Decimal):
                 return float(item)
@@ -80,18 +78,38 @@ class DynamoDBDict(KeyValueStore):
                 return {k: _convert(v) for k, v in item.items()}
             return item
 
-        return _convert(from_dynamodb_json(item))
+        return _convert(item)
+
+    def _to_key_type(self, key):
+        if self.key_type == 'S':
+            key = str(key)
+        elif self.key_type == 'N':
+            key = float(key)
+        return key
+
+    def _to_key(self, key):
+        return {KEY: self._to_key_type(key)}
+
+    def _to_item(self, key, value):
+        if isinstance(value, dict):
+            return {**{KEY: key}, **value}
+        return {KEY: key, VALUE: value}
+
+    def _from_item(self, item):
+        key = item.pop(KEY)
+
+        return key, self._process_item(item)
 
     def _get_item(self, key: str):
-        response = self.client.get_item(TableName=self.table_name, Key=self._to_dynamodb_key(key))
-        return self._from_dynamodb_item(response['Item'][VALUE])
+        response = self.table.get_item(TableName=self.table_name, Key=self._to_key(key))
+        if ITEM in response:
+            return self._from_item(response[ITEM])
 
     def _put_item(self, key: str, value: str):
-        item = self._to_dynamodb_item(key, value)
-        self.client.put_item(TableName=self.table_name, Item=item)
+        self.table.put_item(TableName=self.table_name, Item=self._to_item(key, value))
 
     def _delete_item(self, key: str):
-        self.client.delete_item(TableName=self.table_name, Key=self._to_dynamodb_key(key))
+        self.table.delete_item(TableName=self.table_name, Key=self._to_key(key))
 
     @property
     def description(self):
@@ -100,16 +118,26 @@ class DynamoDBDict(KeyValueStore):
     def __len__(self):
         return int(self.client.scan(TableName=self.table_name, Select='COUNT')['Count'])
 
+    def __contains__(self, item):
+        return self._get_item(item) is not None
+
     def __getitem__(self, item):
-        return self._get_item(item)
+        item = self._get_item(item)
+        if item is None:
+            raise KeyError(item)
+        return item[1]
 
     def __setitem__(self, key, value):
         return self._put_item(key, value)
 
+    def __delitem__(self, key):
+        return self._delete_item(key)
+
     def get(self, key, default=None):
-        with contextlib.suppress(KeyError):
-            return self._get_item(key)
-        return default
+        item = self._get_item(key)
+        if item is None:
+            return default
+        return item[1]
 
     def set(self, key, value):
         return self._put_item(key, value)
@@ -124,7 +152,7 @@ class DynamoDBDict(KeyValueStore):
                     params['ExclusiveStartKey'] = start_key
                 response = self.client.scan(**params)
                 for item in response.get('Items', []):
-                    yield self._from_dynamodb_item(item)[KEY]
+                    yield self._from_item(item)
                 start_key = response.get('LastEvaluatedKey', None)
                 done = start_key is None
         except botocore.exceptions.ClientError as err:
@@ -142,9 +170,9 @@ class DynamoDBDict(KeyValueStore):
             while not done:
                 if start_key:
                     params['ExclusiveStartKey'] = start_key
-                response = self.client.scan(**params)
+                response = self.table.scan(**params)
                 for item in response.get('Items', []):
-                    yield self._from_dynamodb_item(item)
+                    yield self._from_item(item)
                 start_key = response.get('LastEvaluatedKey', None)
                 done = start_key is None
         except botocore.exceptions.ClientError as err:
@@ -156,17 +184,17 @@ class DynamoDBDict(KeyValueStore):
     def keys(self, pattern: str = None, count: int = None):
         params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
         for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
-            yield item[KEY]
+            yield item[0]
 
     def values(self, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
         for item in self._simple_scan(params, limit):
-            yield item[VALUE]
+            yield item[1]
 
     def items(self, pattern: str = None, count: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
         for item in self._to_iter(self._simple_scan(params, limit=count), pattern=pattern, count=count):
-            yield item[KEY], item[VALUE]
+            yield item
 
     def _flush(self):
         description = self.description['Table']
@@ -180,8 +208,8 @@ class DynamoDBDict(KeyValueStore):
         return count
 
     def pop(self, key, default=None):
-        with contextlib.suppress(KeyError):
-            value = self._get_item(key)
+        _, value = self._get_item(key)
+        if value:
             self._delete_item(key)
             return value
         return default
@@ -192,18 +220,22 @@ class DynamoDBDict(KeyValueStore):
             return key, value
         raise KeyError('popitem(): dictionary is empty')
 
+    def _to_dynamodb_key(self, key):
+        return {KEY: {self.key_type: self._to_key_type(key)}}
+
+
     def get_batch(self, keys, default=None):
+        from cerealbox.dynamo import from_dynamodb_json
         responses = self.client.batch_get_item(
             RequestItems={self.table_name: {'Keys': [self._to_dynamodb_key(key) for key in keys]}})
         for item in responses['Responses'][self.table_name]:
-            yield self._from_dynamodb_item(item)[VALUE]
+            yield self._from_item(from_dynamodb_json(item))[1]
 
     def _insert_items(self, items):
-        table = boto3.resource('dynamodb').Table(self.table_name)
         count = 0
-        with table.batch_writer() as batch:
+        with self.table.batch_writer() as batch:
             for key, value in items:
-                response = batch.put_item(Item={KEY: key, VALUE: value})
+                response = batch.put_item(Item=self._to_item(key, value))
                 count += 1
         return count
 
@@ -213,7 +245,8 @@ class DynamoDBDict(KeyValueStore):
        :param d: A dictionary like object with items() method
        :return: Count of items inserted
        """
-        return self._insert_items(d.items())
+        self._insert_items(d.items())
+        return self
 
     def set_batch(self, keys, values):
         """

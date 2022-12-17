@@ -1,5 +1,5 @@
 from tempfile import TemporaryDirectory
-from spoonbill.dictionaries import BucketDict
+from spoonbill.datastores import BucketDict
 import pytest
 
 

@@ -1,5 +1,5 @@
 import re
-from spoonbill.dictionaries import KeyValueStore, VALUE, KEY
+from spoonbill.datastores import KeyValueStore, VALUE, KEY
 from pymongo import MongoClient
 import pymongo
 

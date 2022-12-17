@@ -1,4 +1,4 @@
-from spoonbill.dictionaries import LmdbDict
+from spoonbill.datastores import LmdbDict
 from tempfile import TemporaryDirectory
 
 
