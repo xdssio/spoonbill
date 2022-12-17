@@ -6,8 +6,10 @@ import azure.cosmos.exceptions
 
 
 class CosmosDBDict(KeyValueStore):
+    ID = 'id'
 
-    def __init__(self, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None):
+    def __init__(self, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,
+                 strict=True):
         self.client = CosmosClient(url=endpoint or os.getenv('COSMOS_ENDPOINT'),
                                    credential=credential or os.getenv('COSMOS_KEY'))
         self.database_name = database
@@ -15,24 +17,43 @@ class CosmosDBDict(KeyValueStore):
         self.database = self.client.create_database_if_not_exists(id=self.database_name)
         self.container = self.database.create_container_if_not_exists(
             id=container, partition_key=self.partition_key_path, offer_throughput=400)
-        self.strict = False
+        self.strict = strict
 
     @classmethod
-    def open(cls, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None):
-        return CosmosDBDict(database=database, container=container, endpoint=endpoint, credential=credential)
+    def open(cls, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,
+             strict=True):
+        return CosmosDBDict(database=database, container=container, endpoint=endpoint, credential=credential,
+                            strict=strict)
 
     def _list_containers(self):
         return [container['id'] for container in self.database.list_containers()]
 
+    def _to_item(self, key, value):
+        key = self.encode_key(key)
+        item = {KEY: key, CosmosDBDict.ID: key}
+        if not self.strict or not isinstance(value, dict):
+            item[VALUE] = self.encode_value(value)
+        else:
+            item.update(value)
+        return item
+
+    def _from_item(self, item):
+        if item is not None:
+            key = item.pop(KEY)
+            if VALUE in item:
+                value = self.decode_value(item[VALUE])
+            else:
+                value = {k: v for k, v in item.items() if not str(key).startswith('_')}
+            key = self.decode_key(key)
+            return key, value
+
     def _put_item(self, key, value):
-        key, value = self.encode_key(key), self.encode_value(value)
-        self.container.create_item({KEY: key, 'id': key, VALUE: value})
+        self.container.create_item(self._to_item(key, value))
 
     def _get_item(self, key):
         key = self.encode_key(key)
         with contextlib.suppress(azure.cosmos.exceptions.CosmosResourceNotFoundError):
-            return self.container.read_item(item=key, partition_key=key)
-        return None
+            return self._from_item(self.container.read_item(item=key, partition_key=key))
 
     def __len__(self):
         return next(
@@ -45,17 +66,17 @@ class CosmosDBDict(KeyValueStore):
         value = self._get_item(item)
         if value is None:
             raise KeyError(item)
-        return self.decode_value(value.get(VALUE))
+        return value[1]
 
     def __setitem__(self, key, value):
         item = self._get_item(key)
         if item is None:
             self._put_item(key, value)
         else:
-            item[VALUE] = self.encode_value(value)
-            self.container.upsert_item(item)
+            self.container.upsert_item(self._to_item(key, value))
 
     def _delete_item(self, key):
+        key = self.encode_key(key)
         with contextlib.suppress(azure.cosmos.exceptions.CosmosResourceNotFoundError):
             self.container.delete_item(item=key, partition_key=key)
 
@@ -66,7 +87,7 @@ class CosmosDBDict(KeyValueStore):
         item = self._get_item(item)
         if item is None:
             return default
-        return self.decode_value(item.get(VALUE))
+        return item[1]
 
     def set(self, key, value):
         self._put_item(key, value)
@@ -85,15 +106,15 @@ class CosmosDBDict(KeyValueStore):
 
     def keys(self, pattern: str = None, limit: int = None):
         for item in self._iter(pattern=pattern, limit=limit):
-            yield self.decode_key(item.get(KEY))
+            yield self._from_item(item)[0]
 
     def items(self, pattern: str = None, limit: int = None):
         for item in self._iter(pattern=pattern, limit=limit):
-            yield self.decode_key(item.get(KEY)), self.decode_value(item.get(VALUE))
+            yield self._from_item(item)
 
     def values(self, pattern: str = None, limit: int = None):
         for item in self._iter(pattern=pattern, limit=limit):
-            yield self.decode_key(item.get(VALUE))
+            yield self._from_item(item)[1]
 
     def _update(self, items):
         for key, value in items:
@@ -113,19 +134,19 @@ class CosmosDBDict(KeyValueStore):
 
     def _flush(self):
         for item in self._iter():
-            self.container.delete_item(item.get('id'), partition_key=item.get('id'))
+            self.container.delete_item(item.get(CosmosDBDict.ID), partition_key=item.get(CosmosDBDict.ID))
 
     def pop(self, key, default=None):
         ret = self._get_item(key)
         if ret is None:
             return default
         self._delete_item(key)
-        return self.decode_value(ret.get(VALUE))
+        return ret[1]
 
     def popitem(self):
         if len(self) == 0:
             raise KeyError('popitem(): dictionary is empty')
         item = next(self._iter(limit=1))
-        value = self.decode_value(item.get(VALUE))
         self._delete_item(item.get(KEY))
+        _, value = self._from_item(item)
         return value

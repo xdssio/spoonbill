@@ -4,8 +4,8 @@ import pytest
 
 
 @pytest.mark.skip("Run this test manually")
-def test_cosmos():
-    self = store = CosmosDBDict.open('tmp')
+def test_cosmos_strict():
+    store = CosmosDBDict.open('tmp', strict=True)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -36,6 +36,12 @@ def test_cosmos():
     assert set(store.get_batch([str(i) for i in range(10)])) == set(range(10))
     assert len([1 for _ in store]) == 12  # test iterator
 
+    store['stuff'] = {'a': 1, 'b': 2}
+    store._flush()
+
+
+def test_cosmos():
+    store = CosmosDBDict.open('tmp', strict=False)
     store['function'] = lambda x: x
     assert store['function'](1) == 1
     store._flush()

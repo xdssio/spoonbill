@@ -1,8 +1,15 @@
 # Spoonbill
 
 What is Spoonbill? Inspired by [ibis](https://ibis-project.org/docs/3.2.0/)
-Spoonbill is a Python library that provides a lightweight, universal interface for Key-Value data stores. Write once,
+Spoonbill is a Python library that provides a lightweight, universal interface for Key-Values data stores. Write once,
 run anywhere.
+
+## Feature
+
+1. A `strict=False` mode is available to allow for more flexible data types - anything which is cloudpickle-able will work
+including classes and functions.
+2. A unified interface for all data stores.
+
 
 ## Installation
 
@@ -10,17 +17,7 @@ run anywhere.
 pip install spoonbill
 ```
 
-## Classes
-
-For each key-value store, there are two classes:
-
-1. **Dict** is the one that implements as python dict, as the keys and values are encoded to maintain the same behaviour
-   as a python dict. Best for writing algorithms as you can save and load almost any python object.
-
-2. **StringDict** is the counterpart, where the keys and values are strings. This allows for efficient scans of keys and
-   values, but you can only store strings.
-
-## Dictionaries operations
+## Operations map
 
 * For scan operations, you need to use a keys as strings.
 
@@ -162,7 +159,9 @@ Question: What is the difference between *keys* and *scan*?
 Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non-blocking.
 
 ### DynamoDBDict
+
 Notes:
+
 * It is always recommended to set values which are a dict {attribute_name: value} to enjoy all the dynamodb features.
 * Keys are always strings ('S'), numbers ('N') or bytes ('B').
 * If you set a primitive number value, it will return as float (:
@@ -175,10 +174,12 @@ pip install boto3
 ```
 
 ### FireStoreDict
+
 Notes:
-* It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the firestore features.   
-  * Example: `store['key'] = {'feature': 'value'}`   
-Prerequisites:   
+
+* It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the firestore features.
+    * Example: `store['key'] = {'feature': 'value'}`   
+      Prerequisites:
 
 1. Create a project in Google Cloud Platform
 2. Enable Firestore API
@@ -201,9 +202,12 @@ store = FireStoreDict.open(table_name="my-collection")
 
 ### CosmosDBDict
 
-Azure Cosmos DB Table
-Prerequisites:
-[Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
+Azure Cosmos DB Table Notes:
+
+* It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the CosmosDB features.
+    * Example: `store['key'] = {'feature': 'value'}`
+      Prerequisites:
+      [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
 
 Requirements:
 
@@ -212,11 +216,14 @@ Requirements:
 ```python
 from spoonbill.datastores import CosmosDBDict
 
-store = CosmosDBDict.open(database='db', container='container', endpoint='endpoint', credential='credential')
+store = CosmosDBDict.open(database='db',
+                          container='container',
+                          endpoint='endpoint',
+                          credential='credential')
 ```
 
-
 ### MongoDB
+
 Requirements:
 
 ```pip install pymongo```
