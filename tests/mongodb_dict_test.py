@@ -1,10 +1,12 @@
+from tempfile import TemporaryDirectory
+
 from spoonbill.datastores import MongoDBStore
 import time
 import pytest
 
 
 @pytest.mark.skip("Run this test manually")
-def test_dynamodb():
+def test_dynamodb_strict():
     self = store = MongoDBStore.open()
     store._flush()
 
@@ -36,3 +38,24 @@ def test_dynamodb():
     assert len(store) == 12
     assert set(store.get_batch([str(i) for i in range(10)])) == set(range(10))
     assert len([1 for _ in store]) == 12  # test iterator
+    store['data'] = {'feature1': 1, 'feature2': 'male'}
+    assert store['data'] == {'feature1': 1, 'feature2': 'male'}
+
+
+def test_mongodb():
+    self = store = MongoDBStore.open(strict=False)
+    store._flush()
+    store['function'] = lambda x: x + 1
+
+
+def mongodb_save_load():
+    tmpdir = TemporaryDirectory()
+    store = MongoDBStore.open(strict=True)
+    store._flush()
+    store.update({i: {i: i} for i in range(1000)})
+    path = tmpdir.name + '/cloud.db'
+    store.save(path)
+    store._flush()
+    assert len(store) == 0
+    store = MongoDBStore().load(path)
+    assert len(store) == 1
