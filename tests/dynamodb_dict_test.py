@@ -1,10 +1,10 @@
-from spoonbill.datastores import DynamoDBDict
+from spoonbill.datastores import DynamoDBStore
 import pytest
 
 
 @pytest.mark.skip("Run this test manually")
 def test_dynamodb():
-    store = DynamoDBDict.open('tmp')
+    store = DynamoDBStore.open('tmp')
     for key in store:
         del store[key]
     store['test'] = 'test'

@@ -10,7 +10,7 @@ REDIS_DEFAULT_PORT = 6379
 REDIS_DEFAULT_DB = 1
 
 
-class RedisDict(KeyValueStore, Strict):
+class RedisStore(KeyValueStore, Strict):
 
     def __init__(self, store: typing.Any, strict: bool = False):
         """
@@ -155,7 +155,7 @@ class RedisDict(KeyValueStore, Strict):
     @classmethod
     def open(cls, url: str, strict: bool = False, **kwargs):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisDict(store=redis.Redis.from_url(url, **kwargs), strict=strict)
+        return RedisStore(store=redis.Redis.from_url(url, **kwargs), strict=strict)
 
     @classmethod
     def from_connection(cls, host: str = REDIS_DEFAULT_HOST, port: int = REDIS_DEFAULT_PORT,
@@ -163,9 +163,9 @@ class RedisDict(KeyValueStore, Strict):
 
         if db is None:
             store = redis.Redis(host=host, port=port, db=0, decode_responses=True)
-            db = len(RedisDict._databases_names(store))  # TODO test this
+            db = len(RedisStore._databases_names(store))  # TODO test this
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=strict)
+        return RedisStore(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=strict)
 
     @property
     def _backup_path(self):

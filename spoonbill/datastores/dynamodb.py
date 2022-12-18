@@ -13,7 +13,7 @@ DYNAMODB = 'dynamodb'
 
 
 
-class DynamoDBDict(KeyValueStore):
+class DynamoDBStore(KeyValueStore):
 
     def __init__(self, table_name: str, key_type: str = 'S', **kwargs):
         self.table_name = table_name
@@ -32,7 +32,7 @@ class DynamoDBDict(KeyValueStore):
                 key_type = description['Table']['AttributeDefinitions'][0]['AttributeType']
             except:
                 key_type = 'S'
-        return DynamoDBDict(table_name=table_name, key_type=key_type, **kwargs)
+        return DynamoDBStore(table_name=table_name, key_type=key_type, **kwargs)
 
     def _list_tables(self):
         return self.client.list_tables()['TableNames']

@@ -1,11 +1,11 @@
-from spoonbill.datastores import LmdbDict
+from spoonbill.datastores import LmdbStore
 from tempfile import TemporaryDirectory
 
 
 def test_lmdb():
     tmpdir = TemporaryDirectory()
     path = tmpdir.name + '/tmp.db'
-    store = LmdbDict.open(path)
+    store = LmdbStore.open(path)
     store._flush()
     assert len(store) == 0
     store['test'] = 'test'
@@ -44,11 +44,11 @@ def test_lmdb():
 def test_lmdb_save_load():
     tmpdir = TemporaryDirectory()
     local_path = tmpdir.name + '/local.db'
-    store = LmdbDict.open(local_path)
+    store = LmdbStore.open(local_path)
     store['test'] = 'test'
     other_path = tmpdir.name + '/cloud.db'
     store.save(other_path)
     store._flush()
     assert len(store) == 0
-    store = LmdbDict(local_path).load(other_path)
+    store = LmdbStore(local_path).load(other_path)
     assert len(store) == 1

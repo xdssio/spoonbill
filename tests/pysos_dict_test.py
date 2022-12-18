@@ -1,11 +1,11 @@
-from spoonbill.datastores import PysosDict
+from spoonbill.datastores import PysosStore
 from tempfile import TemporaryDirectory
 
 
 def test_pysos():
     tmpdir = TemporaryDirectory()
     path = tmpdir.name + '/tmp.db'
-    self = store = PysosDict.open(path)
+    self = store = PysosStore.open(path)
     store._flush()
     assert len(store) == 0
     store['test'] = 'test'
@@ -40,11 +40,11 @@ def test_pysos():
 def test_shelve_save_load():
     tmpdir = TemporaryDirectory()
     local_path = tmpdir.name + '/local.db'
-    store = PysosDict.open(local_path)
+    store = PysosStore.open(local_path)
     store['test'] = 'test'
     other_path = tmpdir.name + '/cloud.db'
     store.save(other_path)
     store._flush()
     assert len(store) == 0
-    store = PysosDict(local_path).load(other_path)
+    store = PysosStore(local_path).load(other_path)
     assert len(store) == 1

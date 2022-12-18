@@ -1,11 +1,11 @@
-from spoonbill.datastores import MongoDBDict
+from spoonbill.datastores import MongoDBStore
 import time
 import pytest
 
 
 @pytest.mark.skip("Run this test manually")
 def test_dynamodb():
-    self = store = MongoDBDict.open()
+    self = store = MongoDBStore.open()
     store._flush()
 
     store['test'] = 'test'

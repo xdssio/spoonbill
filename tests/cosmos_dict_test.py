@@ -1,11 +1,11 @@
-from spoonbill.datastores import CosmosDBDict
+from spoonbill.datastores import CosmosDBStore
 import time
 import pytest
 
 
 @pytest.mark.skip("Run this test manually")
 def test_cosmos_strict():
-    store = CosmosDBDict.open('tmp', strict=True)
+    store = CosmosDBStore.open('tmp', strict=True)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -41,7 +41,7 @@ def test_cosmos_strict():
 
 
 def test_cosmos():
-    store = CosmosDBDict.open('tmp', strict=False)
+    store = CosmosDBStore.open('tmp', strict=False)
     store['function'] = lambda x: x
     assert store['function'](1) == 1
     store._flush()

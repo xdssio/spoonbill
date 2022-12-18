@@ -6,7 +6,7 @@ import pymongo
 ID = '_id'
 
 
-class MongoDBDict(KeyValueStore):
+class MongoDBStore(KeyValueStore):
 
     def __init__(self, uri: str = None, database: str = 'db', collection: str = 'collection'):
 
@@ -22,7 +22,7 @@ class MongoDBDict(KeyValueStore):
 
     @classmethod
     def open(cls, uri: str = None, database: str = 'db', collection: str = 'container'):
-        return MongoDBDict(uri=uri, database=database, collection=collection)
+        return MongoDBStore(uri=uri, database=database, collection=collection)
 
     def _list_collections(self):
         return self.database.list_collection_names()

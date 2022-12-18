@@ -290,29 +290,29 @@ class ContextStore(KeyValueStore, Strict):
     scan = items
 
 
-from .inmemory import InMemoryDict
+from .inmemory import InMemoryStore
 from .shelve import ShelveStore
 
 with contextlib.suppress(ImportError):
-    from .redis import RedisDict
+    from .redis import RedisStore
 
 with contextlib.suppress(ImportError):
-    from .lmdb import LmdbDict
+    from .lmdb import LmdbStore
 
 with contextlib.suppress(ImportError):
-    from .pysos import PysosDict
+    from .pysos import PysosStore
 
 with contextlib.suppress(ImportError):
-    from .dynamodb import DynamoDBDict
+    from .dynamodb import DynamoDBStore
 
 with contextlib.suppress(ImportError):
-    from .firestore import FireStoreDict
+    from .firestore import Firestore
 
 with contextlib.suppress(ImportError):
-    from .buckets import BucketDict
+    from .buckets import BucketStore
 
 with contextlib.suppress(ImportError):
-    from .cosmos import CosmosDBDict
+    from .cosmos import CosmosDBStore
 
 with contextlib.suppress(ImportError):
-    from .mongodb import MongoDBDict
+    from .mongodb import MongoDBStore

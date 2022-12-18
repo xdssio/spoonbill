@@ -5,7 +5,7 @@ from azure.cosmos import CosmosClient, PartitionKey
 import azure.cosmos.exceptions
 
 
-class CosmosDBDict(KeyValueStore):
+class CosmosDBStore(KeyValueStore):
     ID = 'id'
 
     def __init__(self, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,
@@ -23,15 +23,15 @@ class CosmosDBDict(KeyValueStore):
     @classmethod
     def open(cls, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,
              strict=True):
-        return CosmosDBDict(database=database, container=container, endpoint=endpoint, credential=credential,
-                            strict=strict)
+        return CosmosDBStore(database=database, container=container, endpoint=endpoint, credential=credential,
+                             strict=strict)
 
     def _list_containers(self):
         return [container['id'] for container in self.database.list_containers()]
 
     def _to_item(self, key, value):
         key = self.encode_key(key)
-        item = {KEY: key, CosmosDBDict.ID: key}
+        item = {KEY: key, CosmosDBStore.ID: key}
         if not self.strict or not isinstance(value, dict):
             item[VALUE] = self.encode_value(value)
         else:
@@ -135,7 +135,7 @@ class CosmosDBDict(KeyValueStore):
 
     def _flush(self):
         for item in self._iter():
-            self.container.delete_item(item.get(CosmosDBDict.ID), partition_key=item.get(CosmosDBDict.ID))
+            self.container.delete_item(item.get(CosmosDBStore.ID), partition_key=item.get(CosmosDBStore.ID))
 
     def pop(self, key, default=None):
         ret = self._get_item(key)

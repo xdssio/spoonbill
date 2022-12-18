@@ -30,7 +30,7 @@ class CloudpickleEncoder(lmdbm.Lmdb):
         return self.decode(value)
 
 
-class LmdbDict(ContextStore):
+class LmdbStore(ContextStore):
     manager = CloudpickleEncoder
 
     def __init__(self, path: str, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
@@ -56,7 +56,7 @@ class LmdbDict(ContextStore):
     @classmethod
     def from_db(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
                 strict=False):
-        return LmdbDict(
+        return LmdbStore(
             path=db_path,
             flag=flag,
             mode=mode,

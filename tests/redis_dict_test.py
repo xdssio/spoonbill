@@ -3,18 +3,18 @@ from tempfile import TemporaryDirectory
 import redis
 import pytest
 import pathlib
-from spoonbill.datastores import RedisDict
+from spoonbill.datastores import RedisStore
 
 
 def test_redis_from_connection():
-    store = RedisDict.from_connection('localhost', 6379, 1, strict=False)
+    store = RedisStore.from_connection('localhost', 6379, 1, strict=False)
     store[1] = 1
     assert store[1] == 1
     store._flush()
 
 
 def test_redis_open():
-    store = RedisDict.open('redis://localhost:6379/1')
+    store = RedisStore.open('redis://localhost:6379/1')
 
     store[1] = 1
     assert store[1] == 1
@@ -24,7 +24,7 @@ def test_redis_open():
 
 
 def test_redis_dict():
-    store = RedisDict.open('redis://localhost:6379/1', strict=False)
+    store = RedisStore.open('redis://localhost:6379/1', strict=False)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -63,7 +63,7 @@ def test_redis_dict():
 
 
 def test_redis_strict():
-    store = RedisDict.open('redis://localhost:6379/1', strict=True)
+    store = RedisStore.open('redis://localhost:6379/1', strict=True)
     store._flush()
     store[1] = 1
     assert '1' in store
@@ -79,7 +79,7 @@ def test_redis_strict():
 
 def test_shelve_save_load():
     tmpdir = TemporaryDirectory()
-    store = RedisDict.open('redis://localhost:6379/1', strict=True)
+    store = RedisStore.open('redis://localhost:6379/1', strict=True)
     store.update({str(i): i for i in range(10000)})
     other_path = tmpdir.name + '/cloud.db'
     store.save(other_path)

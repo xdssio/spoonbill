@@ -1,8 +1,8 @@
-from spoonbill.datastores import FireStoreDict
+from spoonbill.datastores import Firestore
 
 
 def test_firestore():
-    store = FireStoreDict.open('tmp', strict=False)
+    store = Firestore.open('tmp', strict=False)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -39,7 +39,7 @@ def test_firestore():
     store['stuff'] = {'a': 1, 'b': 2}
 
 def test_firestore_strict():
-    store = FireStoreDict.open('tmp', strict=True)
+    store = Firestore.open('tmp', strict=True)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -70,7 +70,7 @@ def test_firestore_strict():
     assert set(store.get_batch([str(i) for i in range(10)])) == set(range(10))
     assert len([1 for _ in store]) == 12  # test iterator
 
-    store = FireStoreDict.open('tmp', strict=True)
+    store = Firestore.open('tmp', strict=True)
     store._flush()
     store['stuff'] = {'a': 1, 'b': 2}
     assert store['stuff'] == {'a': 1, 'b': 2}

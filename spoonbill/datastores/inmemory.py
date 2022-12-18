@@ -7,7 +7,7 @@ import cloudpickle
 from spoonbill.datastores import KeyValueStore
 
 
-class InMemoryDict(KeyValueStore):
+class InMemoryStore(KeyValueStore):
     """
     A key-value store that datastores everything in memory.
     Practically a python dictionary
@@ -30,11 +30,11 @@ class InMemoryDict(KeyValueStore):
 
     @classmethod
     def from_dict(cls, d: dict):
-        return InMemoryDict(d)
+        return InMemoryStore(d)
 
     @classmethod
     def from_json(cls, j):
-        return InMemoryDict(json.loads(j))
+        return InMemoryStore(json.loads(j))
 
     def set(self, key, value):
         self._store[self.encode_key(key)] = self.encode_value(value)
@@ -53,7 +53,7 @@ class InMemoryDict(KeyValueStore):
         :param kwargs:
         :return:
         """
-        return InMemoryDict(store=path, strict=strict)
+        return InMemoryStore(store=path, strict=strict)
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         for key in self._to_iter(self._store.keys(), pattern, limit):

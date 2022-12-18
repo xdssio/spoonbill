@@ -2,7 +2,7 @@ from spoonbill.datastores import KeyValueStore, VALUE
 from google.cloud import firestore
 
 
-class FireStoreDict(KeyValueStore):
+class Firestore(KeyValueStore):
 
     def __init__(self, collection_name: str, strict: bool = True, **kwargs):
         self.collection_name = collection_name
@@ -14,7 +14,7 @@ class FireStoreDict(KeyValueStore):
 
     @classmethod
     def open(self, collection_name: str, strict: bool = False, **kwargs):
-        return FireStoreDict(collection_name=collection_name, strict=strict, **kwargs)
+        return Firestore(collection_name=collection_name, strict=strict, **kwargs)
 
     def _flush(self):
         i = -1

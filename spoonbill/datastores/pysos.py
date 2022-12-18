@@ -5,7 +5,7 @@ import pysos
 from spoonbill.datastores import KeyValueStore
 
 
-class PysosDict(KeyValueStore):
+class PysosStore(KeyValueStore):
     """
     pySOS: Simple Objects Storage
 
@@ -54,5 +54,5 @@ class PysosDict(KeyValueStore):
 
     @classmethod
     def open(cls, path: str):
-        return PysosDict(pysos.Dict(path), path)
+        return PysosStore(pysos.Dict(path), path)
 

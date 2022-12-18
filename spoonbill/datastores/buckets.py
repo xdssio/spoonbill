@@ -8,7 +8,7 @@ def is_cloud_url(path):
     return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", str(path)) is not None
 
 
-class BucketDict(KeyValueStore):
+class BucketStore(KeyValueStore):
     COUNT_KEY = f"count__count__count"
 
     def __init__(self, path):
@@ -28,7 +28,7 @@ class BucketDict(KeyValueStore):
 
     @classmethod
     def open(self, path: str):
-        return BucketDict(path)
+        return BucketStore(path)
 
     @staticmethod
     def get_pathlib(path):

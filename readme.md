@@ -53,10 +53,10 @@ All the classes have the same interface, so you can use them interchangeably.
 ## APIs
 
 ```python
-from spoonbill.datastores import InMemoryDict
-from spoonbill.datastores import InMemoryDict
+from spoonbill.datastores import InMemoryStore
+from spoonbill.datastores import InMemoryStore
 
-store = InMemoryDict()
+store = InMemoryStore()
 store["key"] = "value"
 store["key"] == "value"
 store.set("key", "value")
@@ -84,9 +84,9 @@ case, to have a common interface which includes the scan operation.
   using [cloudpathlib](https://cloudpathlib.drivendata.org/stable/).
 
 ```python
-from spoonbill.datastores import InMemoryDict
+from spoonbill.datastores import InMemoryStore
 
-store = InMemoryDict()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
+store = InMemoryStore()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 ``` 
 
 ### BucketDict
@@ -108,9 +108,9 @@ Requirements:
 ```pip install lmdbm```
 
 ```python
-from spoonbill.datastores import LmdbDict
+from spoonbill.datastores import LmdbStore
 
-store = LmdbDict.open('tmp.db')
+store = LmdbStore.open('tmp.db')
 ```
 
 ### PysosDict pySOS: Simple Objects Storage
@@ -122,9 +122,9 @@ Requirements:
 ```pip install pysos```
 
 ```python
-from spoonbill.datastores import PysosDict
+from spoonbill.datastores import PysosStore
 
-store = PysosDict.open('tmp.db')
+store = PysosStore.open('tmp.db')
 ```
 
 ### RedisDict
@@ -137,9 +137,9 @@ The *strict* parameter allows to store the keys and values as strings (default r
 operations.
 
 ```python
-from spoonbill.datastores import RedisDict
+from spoonbill.datastores import RedisStore
 
-store = RedisDict.from_url("redis://localhost:6379/1")
+store = RedisStore.from_url("redis://localhost:6379/1")
 store["key"] = "value"
 store["key"] == "value"
 
@@ -147,7 +147,7 @@ store[1] = lambda x: x + 1  # anything goes using cloudpickle
 assert store[1](1) == 2
 
 # set strict to True to use redis with its default behaviour which turns keys and values to strings
-store = RedisDict.from_url("redis://localhost:6379/1", strict=True)
+store = RedisStore.from_url("redis://localhost:6379/1", strict=True)
 store[1] = 1
 assert store[1] == store["1"] == "1"
 
@@ -194,10 +194,10 @@ pip install --upgrade google-cloud-firestore
 ```
 
 ```python
-from spoonbill.datastores import FireStoreDict
+from spoonbill.datastores import Firestore
 
 # this rest of the credentials are picked up from the file in the GOOGLE_APPLICATION_CREDENTIALS environment variable
-store = FireStoreDict.open(table_name="my-collection")
+store = Firestore.open(table_name="my-collection")
 ```
 
 ### CosmosDBDict
@@ -214,12 +214,12 @@ Requirements:
 ```pip install azure-cosmos```
 
 ```python
-from spoonbill.datastores import CosmosDBDict
+from spoonbill.datastores import CosmosDBStore
 
-store = CosmosDBDict.open(database='db',
-                          container='container',
-                          endpoint='endpoint',
-                          credential='credential')
+store = CosmosDBStore.open(database='db',
+                           container='container',
+                           endpoint='endpoint',
+                           credential='credential')
 ```
 
 ### MongoDB
@@ -229,9 +229,9 @@ Requirements:
 ```pip install pymongo```
 
 ```python
-from spoonbill.datastores import MongoDBDict
+from spoonbill.datastores import MongoDBStore
 
-store = MongoDBDict.open(uri='mongodb://localhost:27017/')
+store = MongoDBStore.open(uri='mongodb://localhost:27017/')
 ```
 
 
