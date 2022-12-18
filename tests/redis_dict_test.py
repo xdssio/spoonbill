@@ -1,5 +1,8 @@
+from tempfile import TemporaryDirectory
+
 import redis
 import pytest
+import pathlib
 from spoonbill.datastores import RedisDict
 
 
@@ -74,3 +77,13 @@ def test_redis_strict():
 
     with pytest.raises(redis.exceptions.DataError):
         store['1'] = {'1': 1}
+
+
+def test_shelve_save_load():
+    tmpdir = TemporaryDirectory()
+    store = RedisDict.open('redis://localhost:6379/1', strict=True)
+    store.update({str(i): i for i in range(10000)})
+    other_path = tmpdir.name + '/cloud.db'
+    store.save(other_path)
+    store._flush()
+    assert pathlib(other_path).is_file()

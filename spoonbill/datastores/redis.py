@@ -1,3 +1,4 @@
+import time
 import typing
 import redis
 
@@ -134,7 +135,7 @@ class RedisDict(KeyValueStore, Strict):
                 continue
             yield self.decode_value(value)
 
-    def items(self, pattern: str = None, limit:int=None, *args, **kwargs):
+    def items(self, pattern: str = None, limit: int = None, *args, **kwargs):
         for i, (key, value) in enumerate(self._items(pattern, *args, **kwargs)):
             if value is None:
                 continue
@@ -148,9 +149,9 @@ class RedisDict(KeyValueStore, Strict):
         return count
 
     @classmethod
-    def open(cls, url: str, as_strings: bool = False, **kwargs):
+    def open(cls, url: str, strict: bool = False, **kwargs):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisDict(store=redis.Redis.from_url(url, **kwargs), strict=as_strings)
+        return RedisDict(store=redis.Redis.from_url(url, **kwargs), strict=strict)
 
     @classmethod
     def from_connection(cls, host: str = REDIS_DEFAULT_HOST, port: int = REDIS_DEFAULT_PORT,
@@ -162,3 +163,23 @@ class RedisDict(KeyValueStore, Strict):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
         return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=as_strings)
 
+    @property
+    def _backup_path(self):
+        return self._get_path(self._store.config_get('dir')['dir']).joinpath(
+            self._store.config_get('dbfilename')['dbfilename'])
+
+    def save(self, path: str):
+        self._store.bgsave()
+        time.sleep(1)
+        self._get_path(path).write_bytes(self._backup_path.read_bytes())
+
+    def load(self, path: str):
+        print(f"Loading for redis in not trivial")
+        print("1. Stop redis server")
+        print(f"2. Copy the file from {path} to {self._backup_path}")
+        print("3. If AOF is enabled, turn it off")
+        print("4. Start redis server")
+        print("5. Set AOF to the desired state")
+        print(
+            "have a look here: https://www.digitalocean.com/community/tutorials/how-to-back-up-and-restore-your-redis-data-on-ubuntu-14-04#step-5-restoring-redis-database-from-backup")
+        return None
