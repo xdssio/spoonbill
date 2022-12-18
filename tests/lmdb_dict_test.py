@@ -32,10 +32,10 @@ def test_lmdb():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
     store._flush()
-    store.set_batch(range(10), range(10))
-    assert len(store) == 10
+    store.set_batch(range(1000), range(1000))
+    assert len(store) == 1000
     assert list(store.get_batch(range(10))) == list(range(10))
-    assert len([1 for _ in store]) == 10  # test iterator
+    assert len([1 for _ in store]) == 1000  # test iterator
 
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2

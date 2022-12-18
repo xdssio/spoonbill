@@ -83,16 +83,5 @@ class InMemoryDict(KeyValueStore):
         return self
 
     @staticmethod
-    def encode(value):
-        return cloudpickle.dumps(value)
-
-    @staticmethod
-    def decode(value):
-        if value is not None:
-            return cloudpickle.loads(value)
-
-    @staticmethod
     def _is_encoded(value):
         return str(value)[:2] == "b'"
-
-

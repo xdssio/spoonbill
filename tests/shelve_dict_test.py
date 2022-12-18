@@ -29,10 +29,11 @@ def test_shelve():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
     store._flush()
-    store.set_batch(range(10), range(10))
-    assert len(store) == 10
+    N = 1000
+    store.set_batch(range(N), range(N))
+    assert len(store) == N
     assert set(store.get_batch(range(10))) == set(range(10))
-    assert len([1 for _ in store]) == 10  # test iterator
+    assert len([1 for _ in store]) == N  # test iterator
 
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2

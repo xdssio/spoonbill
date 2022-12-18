@@ -150,3 +150,13 @@ class CosmosDBDict(KeyValueStore):
         self._delete_item(item.get(KEY))
         _, value = self._from_item(item)
         return value
+
+    def encode_key(self, key):
+        if self.strict:
+            return key
+        return str(key)
+
+    def decode_key(self, key):
+        if self.strict:
+            return key
+        return key

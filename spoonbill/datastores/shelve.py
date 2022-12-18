@@ -22,4 +22,10 @@ class ShelveStore(ContextStore, Strict):
             os.remove(self.store_path)
         return count
 
+    def encode_key(self, key):
+        if self.strict or self._is_primitivesh(key):
+            return str(key)
+        return self.encode(key)
+
+
     open = from_db

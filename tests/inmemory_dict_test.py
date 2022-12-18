@@ -56,12 +56,3 @@ def test_inmemory_ordereddict():
     store = InMemoryDict.open(OrderedDict())
     store.update({key: key for key in range(1000)})
     assert list(store.keys()) == list(range(1000))
-
-    self = store = InMemoryDict.open(strict=True)
-    store.update({key: key for key in range(1000)})
-    assert list(store.keys()) == list(range(1000))
-
-    self = store = InMemoryDict.open(strict=False)
-    store.update({key: key for key in range(1000)})
-    with pytest.raises(AssertionError):
-        assert list(store.keys()) == list(range(1000))

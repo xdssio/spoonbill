@@ -15,40 +15,42 @@ class Strict:
     encoding: str = 'cp1252'
     strict: bool = False
 
-    @staticmethod
-    def encode(value):
+    @classmethod
+    def encode(cls, value):
         return cloudpickle.dumps(value).decode(Strict.encoding)
 
-    @staticmethod
-    def decode(value):
+    @classmethod
+    def decode(cls, value):
         if value is not None:
-            return cloudpickle.loads(value.encode(Strict.encoding))
+            if cls._is_encoded(value):
+                return cloudpickle.loads(value.encode(Strict.encoding))
+            return value
 
     @staticmethod
     def _is_encoded(value):
-        return str(value)[0] == '€'
+        return isinstance(value, str) and value[0] == '€'
+
+    @staticmethod
+    def _is_primitivesh(item):  # TODO better name
+        return isinstance(item, (int, float, bool))
 
     def encode_key(self, key):
-        if self.strict:
-            return key
-        elif isinstance(key, str):
+        if self.strict or self._is_primitivesh(key):
             return key
         return self.encode(key)
 
     def decode_key(self, key):
-        if self.strict:
+        if self.strict or self._is_primitivesh(key):
             return key
-        elif self._is_encoded(key):
-            return self.decode(key)
-        return key
+        return self.decode(key)
 
     def encode_value(self, value):
-        if self.strict:  # let redis handle the encoding
+        if self.strict or self._is_primitivesh(value):
             return value
         return self.encode(value)
 
     def decode_value(self, value):
-        if self.strict:  # let redis handle the encoding
+        if self.strict or self._is_primitivesh(value):
             return value
         return self.decode(value)
 
@@ -231,8 +233,9 @@ class ContextStore(KeyValueStore, Strict):
 
     def get(self, key, default=None):
         with self.manager.open(self.store_path, **self.open_params) as store:
+            key = self.encode_key(key)
             if key in store:
-                return self.decode_value(store[self.encode_key(key)])
+                return self.decode_value(store[key])
         return default
 
     def set(self, key, value):
@@ -256,8 +259,8 @@ class ContextStore(KeyValueStore, Strict):
 
     def get_batch(self, keys, default=None):
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for key in store.keys():
-                yield self.decode_value(store.get(key, default))
+            for key in keys:
+                yield store.get(self.encode_key(key), default)
 
     def set_batch(self, keys, values):
         with self.manager.open(self.store_path, **self.open_params) as store:
