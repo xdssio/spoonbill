@@ -64,12 +64,6 @@ class LmdbDict(ContextStore):
             strict=strict
         )
 
-    def _cp(self, source, target):
-        source_path = self._get_path(source)
-        files = [path.read_bytes() for path in source_path.glob("*")]
-        target_path = self._get_path(target)
-        target_path.write_bytes(cloudpickle.dumps(files))
-
     def save(self, path):
         source_path = self._get_path(self.store_path)
         files = {file.name: file.read_bytes() for file in source_path.glob("*")}
