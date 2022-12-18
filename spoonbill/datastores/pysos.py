@@ -1,5 +1,5 @@
 import os
-
+import cloudpickle
 import pysos
 
 from spoonbill.datastores import KeyValueStore
@@ -54,3 +54,4 @@ class PysosDict(KeyValueStore):
     @classmethod
     def open(cls, path: str):
         return PysosDict(pysos.Dict(path), path)
+

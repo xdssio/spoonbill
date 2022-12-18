@@ -36,3 +36,16 @@ def test_shelve():
 
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2
+
+
+def test_shelve_save_load():
+    tmpdir = TemporaryDirectory()
+    local_path = tmpdir.name + '/local.db'
+    store = ShelveStore.open(local_path)
+    store['test'] = 'test'
+    other_path = tmpdir.name + '/cloud.db'
+    store.save(other_path)
+    store._flush()
+    assert len(store) == 0
+    store = ShelveStore(local_path).load(other_path)
+    assert len(store) == 1

@@ -1,3 +1,5 @@
+import contextlib
+
 import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
@@ -61,5 +63,29 @@ class LmdbDict(ContextStore):
             autogrow=autogrow,
             strict=strict
         )
+
+    def _cp(self, source, target):
+        source_path = self._get_path(source)
+        files = [path.read_bytes() for path in source_path.glob("*")]
+        target_path = self._get_path(target)
+        target_path.write_bytes(cloudpickle.dumps(files))
+
+    def save(self, path):
+        source_path = self._get_path(self.store_path)
+        files = {file.name: file.read_bytes() for file in source_path.glob("*")}
+        target_path = self._get_path(path)
+        with contextlib.suppress(FileNotFoundError):
+            target_path.rmdir()
+        target_path.write_bytes(cloudpickle.dumps(files))
+        return True
+
+    def load(self, path):
+        source_path = self._get_path(path)
+        files = cloudpickle.loads(source_path.read_bytes())
+        target_path = self._get_path(self.store_path)
+        target_path.mkdir(parents=True, exist_ok=True)
+        for name, data in files.items():
+            target_path.joinpath(name).write_bytes(data)
+        return self
 
     open = from_db

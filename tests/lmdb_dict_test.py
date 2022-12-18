@@ -39,3 +39,16 @@ def test_lmdb():
 
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2
+
+
+def test_lmdb_save_load():
+    tmpdir = TemporaryDirectory()
+    local_path = tmpdir.name + '/local.db'
+    store = LmdbDict.open(local_path)
+    store['test'] = 'test'
+    other_path = tmpdir.name + '/cloud.db'
+    store.save(other_path)
+    store._flush()
+    assert len(store) == 0
+    store = LmdbDict(local_path).load(other_path)
+    assert len(store) == 1

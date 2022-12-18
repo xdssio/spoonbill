@@ -14,7 +14,7 @@ def test_pysos():
     # test set and get
     store.set('another', 'another')
     assert store.get('another') == 'another'
-    assert store.get('nope', 'nope') == 'nope' # test default value
+    assert store.get('nope', 'nope') == 'nope'  # test default value
     assert 'test' in store  # test contains
 
     assert set(store.keys()) == set(['test', 'another'])
@@ -35,3 +35,16 @@ def test_pysos():
 
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2
+
+
+def test_shelve_save_load():
+    tmpdir = TemporaryDirectory()
+    local_path = tmpdir.name + '/local.db'
+    store = PysosDict.open(local_path)
+    store['test'] = 'test'
+    other_path = tmpdir.name + '/cloud.db'
+    store.save(other_path)
+    store._flush()
+    assert len(store) == 0
+    store = PysosDict(local_path).load(other_path)
+    assert len(store) == 1
