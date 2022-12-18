@@ -18,6 +18,7 @@ class CosmosDBDict(KeyValueStore):
         self.container = self.database.create_container_if_not_exists(
             id=container, partition_key=self.partition_key_path, offer_throughput=400)
         self.strict = strict
+        self.as_string = True
 
     @classmethod
     def open(cls, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,

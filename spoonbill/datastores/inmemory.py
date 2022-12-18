@@ -14,7 +14,7 @@ class InMemoryDict(KeyValueStore):
 
     """
 
-    def __init__(self, store: dict = None, strict: bool = False):
+    def __init__(self, store: dict = None, strict: bool = True):
         """
         :param store: a dictionary to use as the store
         :param strict: if False, encode and decode keys and values with cloudpickle
@@ -26,6 +26,7 @@ class InMemoryDict(KeyValueStore):
             elif isinstance(store, str):
                 self.load(store)
         self.strict = strict
+        self.as_string = False
 
     @classmethod
     def from_dict(cls, d: dict):

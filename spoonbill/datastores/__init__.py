@@ -14,43 +14,49 @@ RANDOM_VALUE = '#5f1a7da3a2b04d629231108bb6548dcb#'
 class Strict:
     encoding: str = 'cp1252'
     strict: bool = False
+    as_string: bool = True
 
-    @classmethod
-    def encode(cls, value):
-        return cloudpickle.dumps(value).decode(Strict.encoding)
+    def _is_encoded(self, value):
+        if self.as_string:
+            return isinstance(value, str) and str(value)[:3] in ('b"\\', "b'\\")
+        return isinstance(value, bytes) and value[:1] == b'\x80'
 
-    @classmethod
-    def decode(cls, value):
+    def encode(self, value):
+        """Encode a value to a string.
+        Note were using the str instead of encoding to bytes because it works best with
+        numbers too without creating issues with different encodings.
+        """
+        encoded = cloudpickle.dumps(value)
+        if self.as_string:
+            return str(encoded)
+        return encoded
+
+    def decode(self, value):
         if value is not None:
-            if cls._is_encoded(value):
-                return cloudpickle.loads(value.encode(Strict.encoding))
+            if self._is_encoded(value):
+                if self.as_string:
+                    value = eval(value)
+                value = cloudpickle.loads(value)
+                return value
             return value
 
-    @staticmethod
-    def _is_encoded(value):
-        return isinstance(value, str) and value[0] == '€'
-
-    @staticmethod
-    def _is_primitivesh(item):  # TODO better name
-        return isinstance(item, (int, float, bool))
-
     def encode_key(self, key):
-        if self.strict or self._is_primitivesh(key):
+        if self.strict:
             return key
         return self.encode(key)
 
     def decode_key(self, key):
-        if self.strict or self._is_primitivesh(key):
+        if self.strict:
             return key
         return self.decode(key)
 
     def encode_value(self, value):
-        if self.strict or self._is_primitivesh(value):
+        if self.strict:
             return value
         return self.encode(value)
 
     def decode_value(self, value):
-        if self.strict or self._is_primitivesh(value):
+        if self.strict:
             return value
         return self.decode(value)
 
@@ -260,7 +266,7 @@ class ContextStore(KeyValueStore, Strict):
     def get_batch(self, keys, default=None):
         with self.manager.open(self.store_path, **self.open_params) as store:
             for key in keys:
-                yield store.get(self.encode_key(key), default)
+                yield self.decode_value(store.get(self.encode_key(key), default))
 
     def set_batch(self, keys, values):
         with self.manager.open(self.store_path, **self.open_params) as store:

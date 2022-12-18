@@ -1,11 +1,9 @@
 from tempfile import TemporaryDirectory
 
-import pytest
-
 from spoonbill.datastores import InMemoryDict
 
 
-def test_dict():
+def test_dict_strict():
     store = InMemoryDict.open()
     store['test'] = 'test'
     assert len(store) == 1
@@ -27,6 +25,7 @@ def test_dict():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
 
+def test_inmemory_dict():
     store = InMemoryDict(strict=False)
     store.set_batch(range(11), range(11))
     assert len(store) == 11

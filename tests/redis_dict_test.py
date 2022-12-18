@@ -7,7 +7,7 @@ from spoonbill.datastores import RedisDict
 
 
 def test_redis_from_connection():
-    store = RedisDict.from_connection('localhost', 6379, 1)
+    store = RedisDict.from_connection('localhost', 6379, 1, strict=False)
     store[1] = 1
     assert store[1] == 1
     store._flush()
@@ -15,6 +15,7 @@ def test_redis_from_connection():
 
 def test_redis_open():
     store = RedisDict.open('redis://localhost:6379/1')
+
     store[1] = 1
     assert store[1] == 1
     store['test'] = {'1': 1}
@@ -23,7 +24,7 @@ def test_redis_open():
 
 
 def test_redis_dict():
-    store = RedisDict.open('redis://localhost:6379/1')
+    store = RedisDict.open('redis://localhost:6379/1', strict=False)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -62,14 +63,11 @@ def test_redis_dict():
 
 
 def test_redis_strict():
-    store = RedisDict.open('redis://localhost:6379/1', as_strings=True)
+    store = RedisDict.open('redis://localhost:6379/1', strict=True)
     store._flush()
     store[1] = 1
     assert '1' in store
-    assert store[1] == '1'
-    assert store.get(1) == '1'
-    assert store.get('1') == '1'
-    assert store[1] == store._store[1] == store['1'] == store._store['1']
+    assert store[1] == store.get(1) == store.get('1') == store._store[1] == '1'
     store[11] = 11
     store[2] = 2
     assert set(store.scan('1*')) == set([('1', '1'), ('11', '11')])
@@ -86,4 +84,4 @@ def test_shelve_save_load():
     other_path = tmpdir.name + '/cloud.db'
     store.save(other_path)
     store._flush()
-    assert pathlib(other_path).is_file()
+    assert pathlib.Path(other_path).is_file()

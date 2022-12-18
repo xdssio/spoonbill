@@ -27,6 +27,7 @@ class PysosDict(KeyValueStore):
         self._store = store or {}
         self.store_path = store_path
         self.strict = strict
+        self.as_string = True
 
     def _flush(self):
         count = len(self)

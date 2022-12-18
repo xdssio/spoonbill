@@ -1,5 +1,4 @@
 from spoonbill.datastores import DynamoDBDict
-import time
 import pytest
 
 

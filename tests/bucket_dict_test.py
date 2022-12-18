@@ -28,10 +28,11 @@ def test_dict():
     assert store == {'test': 'test2', 'another': 'another2'}
 
     store._flush()
-    store.set_batch(range(11), range(11))
-    assert len(store) == 11
+    N = 1000
+    store.set_batch(range(N), range(N))
+    assert len(store) == N
     assert list(store.get_batch(range(10))) == list(range(10))
-    assert len([1 for _ in store]) == 11  # test iterator
+    assert len([1 for _ in store]) == N  # test iterator
 
 
 @pytest.mark.skip("Run manually")

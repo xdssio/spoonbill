@@ -1,5 +1,6 @@
 import time
 import typing
+
 import redis
 
 from spoonbill.datastores import KeyValueStore, Strict
@@ -21,6 +22,7 @@ class RedisDict(KeyValueStore, Strict):
         """
         self._store = store
         self.strict = strict
+        self.as_string = True
 
     def __len__(self):
         return self._store.dbsize()
@@ -111,6 +113,17 @@ class RedisDict(KeyValueStore, Strict):
                         continue
                     yield self.decode_key(key), self.decode_value(value)
 
+    def _items(self, pattern: str = None, *args, **kwargs):
+        if pattern:
+            if self.strict:
+                raise NotImplementedError("pattern is not supported in strict=False mode")
+            kwargs['pattern'] = pattern
+        keys = self._store.keys(*args, **kwargs)
+        if keys:
+            values = self._store.mget(*keys)
+            return zip(keys, values)
+        return iter([])
+
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         if pattern:
             kwargs['pattern'] = pattern
@@ -118,15 +131,6 @@ class RedisDict(KeyValueStore, Strict):
             if i == limit:
                 break
             yield self.decode_key(key)
-
-    def _items(self, pattern: str = None, *args, **kwargs):
-        if pattern:
-            kwargs['pattern'] = pattern
-        keys = self._store.keys(*args, **kwargs)
-        if keys:
-            values = self._store.mget(*keys)
-            return zip(keys, values)
-        return iter([])
 
     def values(self, *args, **kwargs):
         kwargs.pop('pattern', None)
@@ -155,13 +159,13 @@ class RedisDict(KeyValueStore, Strict):
 
     @classmethod
     def from_connection(cls, host: str = REDIS_DEFAULT_HOST, port: int = REDIS_DEFAULT_PORT,
-                        db: int = None, as_strings: bool = False, **kwargs):
+                        db: int = None, strict: bool = False, **kwargs):
 
         if db is None:
             store = redis.Redis(host=host, port=port, db=0, decode_responses=True)
             db = len(RedisDict._databases_names(store))  # TODO test this
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=as_strings)
+        return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=strict)
 
     @property
     def _backup_path(self):
@@ -183,3 +187,8 @@ class RedisDict(KeyValueStore, Strict):
         print(
             "have a look here: https://www.digitalocean.com/community/tutorials/how-to-back-up-and-restore-your-redis-data-on-ubuntu-14-04#step-5-restoring-redis-database-from-backup")
         return None
+
+    def encode_key(self, key):
+        if self.strict or isinstance(key, str):
+            return key
+        return self.encode(key)

@@ -10,6 +10,7 @@ class FireStoreDict(KeyValueStore):
         self.client = firestore.Client(**kwargs)
         self.collection = self.client.collection(collection_name)
         self.strict = strict
+        self.as_string = True
 
     @classmethod
     def open(self, collection_name: str, strict: bool = False, **kwargs):

@@ -8,9 +8,10 @@ from spoonbill.datastores import ContextStore, Strict
 class ShelveStore(ContextStore, Strict):
     manager = shelve
 
-    def __init__(self, path, strict=False):
+    def __init__(self, path, strict=True):
         self.store_path = path
         self.strict = strict
+        self.as_string = True
 
     @classmethod
     def from_db(cls, path, strict: bool = False):
@@ -23,9 +24,8 @@ class ShelveStore(ContextStore, Strict):
         return count
 
     def encode_key(self, key):
-        if self.strict or self._is_primitivesh(key):
+        if self.strict:
             return str(key)
         return self.encode(key)
-
 
     open = from_db

@@ -37,6 +37,7 @@ class LmdbDict(ContextStore):
                  strict=False):
         self.store_path = path
         self.strict = strict
+        self.as_string = False
         self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
 
     def _flush(self):
