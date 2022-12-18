@@ -4,6 +4,7 @@ import warnings
 
 import cloudpickle
 import re
+import pathlib
 
 KEY = 'key'
 VALUE = 'VALUE#'
@@ -23,16 +24,16 @@ class Strict:
         if value is not None:
             return cloudpickle.loads(value.encode(Strict.encoding))
 
+    @staticmethod
+    def _is_encoded(value):
+        return str(value)[0] == '€'
+
     def encode_key(self, key):
         if self.strict:
             return key
         elif isinstance(key, str):
             return key
         return self.encode(key)
-
-    @staticmethod
-    def _is_encoded(value):
-        return str(value)[0] == '€'
 
     def decode_key(self, key):
         if self.strict:
@@ -55,6 +56,19 @@ class Strict:
         path = self._get_path(path)
         path.write_bytes(cloudpickle.dumps(self))
         return True
+
+    @staticmethod
+    def _is_cloud_url(path):
+        if hasattr(path, 'dirname'):
+            path = path.dirname
+        return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", path) is not None
+
+    @classmethod
+    def _get_path(cls, path):
+        if cls._is_cloud_url(path):
+            import cloudpathlib
+            return cloudpathlib.CloudPath(path)
+        return pathlib.Path(path)
 
     @classmethod
     def from_file(cls, path):
@@ -250,6 +264,19 @@ class ContextStore(KeyValueStore, Strict):
             for key, value in zip(keys, values):
                 store[self.encode_key(key)] = self.encode_value(value)
         return True
+
+    def _cp(self, source, target):
+        source_path = self._get_path(source)
+        target_path = self._get_path(target)
+        target_path.write_bytes(source_path.read_bytes())
+
+    def save(self, path):
+        self._cp(self.store_path, path)
+        return path
+
+    def load(self, path):
+        self._cp(path, self.store_path)
+        return self
 
     scan = items
 

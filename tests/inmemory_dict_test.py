@@ -1,4 +1,7 @@
 from tempfile import TemporaryDirectory
+
+import pytest
+
 from spoonbill.datastores import InMemoryDict
 
 
@@ -24,12 +27,14 @@ def test_dict():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
 
-    store = InMemoryDict()
+    store = InMemoryDict(strict=False)
     store.set_batch(range(11), range(11))
     assert len(store) == 11
     assert list(store.get_batch(range(10))) == list(range(10))
     assert len([1 for _ in store]) == 11  # test iterator
 
+    store = InMemoryDict(strict=True)
+    store.set_batch(range(11), range(11))
     assert [item[0] for item in store.scan(pattern='1+')] == [1, 10]  # scan looks at keys as strings
 
 
@@ -41,5 +46,22 @@ def test_inmemory_save_load():
     store.save(path)
     store._flush()
     assert len(store) == 0
-    store = InMemoryDict.load(path)
+    store = InMemoryDict().load(path)
     assert len(store) == 1
+    store = InMemoryDict(path)
+
+
+def test_inmemory_ordereddict():
+    from collections import OrderedDict
+    store = InMemoryDict.open(OrderedDict())
+    store.update({key: key for key in range(1000)})
+    assert list(store.keys()) == list(range(1000))
+
+    self = store = InMemoryDict.open(strict=True)
+    store.update({key: key for key in range(1000)})
+    assert list(store.keys()) == list(range(1000))
+
+    self = store = InMemoryDict.open(strict=False)
+    store.update({key: key for key in range(1000)})
+    with pytest.raises(AssertionError):
+        assert list(store.keys()) == list(range(1000))

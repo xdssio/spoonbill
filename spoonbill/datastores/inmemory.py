@@ -19,7 +19,12 @@ class InMemoryDict(KeyValueStore):
         :param store: a dictionary to use as the store
         :param strict: if False, encode and decode keys and values with cloudpickle
         """
-        self._store = store or {}
+        self._store = {}
+        if store:
+            if isinstance(store, dict):
+                self._store = store
+            elif isinstance(store, str):
+                self.load(store)
         self.strict = strict
 
     @classmethod
@@ -40,27 +45,14 @@ class InMemoryDict(KeyValueStore):
         return ret
 
     @classmethod
-    def open(self, path=None, *args, **kwargs):
+    def open(self, path=None, strict=True, *args, **kwargs):
         """
         This is a dummy method to make the API consistent with other datastores
         :param args:
         :param kwargs:
         :return:
         """
-        return InMemoryDict() if path is None else InMemoryDict.from_file(path)
-
-    @staticmethod
-    def _is_cloud_url(path):
-        if hasattr(path, 'dirname'):
-            path = path.dirname
-        return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", path) is not None
-
-    @staticmethod
-    def _get_path(path):
-        if InMemoryDict._is_cloud_url(path):
-            import cloudpathlib
-            return cloudpathlib.CloudPath(path)
-        return pathlib.Path(path)
+        return InMemoryDict(store=path, strict=strict)
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         for key in self._to_iter(self._store.keys(), pattern, limit):
@@ -77,3 +69,30 @@ class InMemoryDict(KeyValueStore):
                 yield self.decode_key(key), self.decode_value(value)
 
     scan = items
+
+    def save(self, path):
+        target_path = self._get_path(path)
+        target_path.write_bytes(cloudpickle.dumps(self))
+        return path
+
+    def load(self, path):
+        path = self._get_path(path)
+        loaded = cloudpickle.loads(path.read_bytes())
+        self._store = loaded._store
+        self.strict = loaded.strict
+        return self
+
+    @staticmethod
+    def encode(value):
+        return cloudpickle.dumps(value)
+
+    @staticmethod
+    def decode(value):
+        if value is not None:
+            return cloudpickle.loads(value)
+
+    @staticmethod
+    def _is_encoded(value):
+        return str(value)[:2] == "b'"
+
+
