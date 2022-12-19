@@ -63,22 +63,24 @@ from spoonbill.datastores import InMemoryStore
 store = InMemoryStore()
 store["key"] = "value"
 store["key"] == "value"
+del store['key']
 store.set("key", "value")
 store.get("key", None)
+store.delete("key")
+store.pop('key', None)
+store.popitem()
 store.keys(pattern="*", limit=10)  # only correct when using string keys
 store.items(pattern="*", limit=10)  # only correct when using string keys
 store.values()
-'key' in store
-del store['key']
-store.update({'key': 'value'})
-store.get_batch(['key'])
-store.set_batch(['key'], ['value'])
+'key' in store  # contains
 len(store)
-for key in store: pass
-store.pop('key', None)
-store.popitem()
+for key in store: pass # iterate
+store.update({'key': 'value'})
+store.set_batch(['key'], ['value'])
+store.get_batch(['key'])
 store.save('path')
 store.load('path')
+
 ```
 
 ### InMemoryDict

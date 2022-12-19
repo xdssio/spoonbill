@@ -167,6 +167,9 @@ class KeyValueStore(Strict):
     def set(self, key, value):
         return self._store.set(self.encode_key(key), self.encode_value(value))
 
+    def delete(self, key):
+        return self.pop(key)
+
     def update(self, d):
         self._store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
         return self
