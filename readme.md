@@ -4,7 +4,9 @@ What is Spoonbill? Inspired by [ibis](https://ibis-project.org/docs/3.2.0/)
 Spoonbill is a Python library that provides a lightweight, universal interface for Key-Values data stores. Write once,
 run anywhere.
 
-## Feature
+For fast prototyping, testing, and simplification of data pipelines.
+
+## Features
 
 1. A `strict=False` mode is available to allow for more flexible data types - anything which is cloudpickle-able will
    work including classes and functions.
@@ -14,6 +16,12 @@ run anywhere.
 
 ```bash
 pip install spoonbill
+```
+
+## Usage
+
+```
+df['user']
 ```
 
 ## Operations map
@@ -106,10 +114,14 @@ for as a cheap persisted key-value stor.
 
 For faster applications with cloud persistence, use InMemoryStore/LmdbStore and save/load to the cloud.
 
-### LmdbDict
+## Persisted dictionaries
 
-LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library. It is a fast key-value with memory-mapped
-persistence
+Dictionaries which are persisted to disk.
+
+### LmdbStore
+
+LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library.    
+It is a fast key-value with memory-mapped persistence.
 
 Requirements:   
 ```pip install lmdbm```
@@ -120,10 +132,10 @@ from spoonbill.datastores import LmdbStore
 store = LmdbStore.open('tmp.db')
 ```
 
-### PysosDict pySOS: Simple Objects Storage
+### PysosStore
 
-A wrapper around the [pysos](https://github.com/dagnelies/pysos) library. This is ideal for lists or dictionaries which
-either need persistence, are too big to fit in memory or both.
+A wrapper around the [pysos](https://github.com/dagnelies/pysos) library.      
+This is ideal for lists or dictionaries which either need persistence, are too big to fit in memory or both.
 
 Requirements:   
 ```pip install pysos```
@@ -134,32 +146,26 @@ from spoonbill.datastores import PysosStore
 store = PysosStore.open('tmp.db')
 ```
 
-### RedisDict
+### RedisStore
 
-As default, the RedisDict act as a python dict, encode every key and value to bytes using cloudpickle. This allows to
-store any python object, but it is not efficient for scan operations. It also make the scan a bit unstable as only
-string keys are supported.
+A wrapper around [redis-py](https://github.com/redis/redis-py) library.
 
-The *strict* parameter allows to store the keys and values as strings (default redis), which allows for efficient scan
-operations.
+* When strict=False any key-value can be used, otherwise only string keys and values can be used.
 
 ```python
 from spoonbill.datastores import RedisStore
 
-store = RedisStore.from_url("redis://localhost:6379/1")
-store["key"] = "value"
-store["key"] == "value"
-
-store[1] = lambda x: x + 1  # anything goes using cloudpickle
-assert store[1](1) == 2
-
 # set strict to True to use redis with its default behaviour which turns keys and values to strings
-store = RedisStore.from_url("redis://localhost:6379/1", strict=True)
+store = RedisStore.open("redis://localhost:6379/1")
 store[1] = 1
 assert store[1] == store["1"] == "1"
 
 assert list(store.keys('1*')) == ['111', '1', '11']  # redis turn every key to string
 assert list(store.scan('1*')) == ['111', '1', '11']
+
+store = RedisStore.open("redis://localhost:6379/1", strict=False)
+store[1] = lambda x: x + 1  # anything goes using cloudpickle
+assert store[1](1) == 2
 ```
 
 Question: What is the difference between *keys* and *scan*?     
@@ -167,13 +173,11 @@ Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non
 
 ## Serverless stores
 
-Key-values stores.
-
-* Recommended to use as strict=True to enjoy all the benefits of backends.
+* Recommended to use with `strict=True` to enjoy all the benefits of backends.
 * Recommended to use values as dict values, as they are more efficient to scan.
     * Example: `store['key'] = {'a': 1, 'b': 2}`
 
-### DynamoDBDict
+### [DynamoDB]((https://aws.amazon.com/dynamodb/))
 
 Notes:
 
@@ -188,7 +192,7 @@ Requirements:
 pip install boto3 
 ```
 
-### FireStoreDict
+### [Firestore]((https://firebase.google.com/docs/firestore))
 
 Notes:
 
@@ -215,15 +219,14 @@ from spoonbill.datastores import Firestore
 store = Firestore.open(table_name="my-collection")
 ```
 
-### CosmosDBDict
+### [Azure CosmosDB]((https://www.google.com/search?client=safari&rls=en&q=Azure+Cosmos&ie=UTF-8&oe=UTF-8))
 
-Azure Cosmos DB Table Notes:
+Notes:
 
 * It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the CosmosDB features.
     * Example: `store['key'] = {'feature': 'value'}`
 
-Prerequisites:   
-[Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
+Prerequisites: [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
 
 Requirements:
 
@@ -238,9 +241,10 @@ store = CosmosDBStore.open(database='db',
                            credential='credential')
 ```
 
-### MongoDB
+### [MongoDB]((https://www.mongodb.com/home))
 
 * Save/load is only implemented for `strict=True`.
+
 Requirements:
 
 ```pip install pymongo```
