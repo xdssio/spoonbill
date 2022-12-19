@@ -1,3 +1,5 @@
+![Logo](https://github.com/xdssio/spoonbill/blob/master/assets/logo.png)
+
 # Spoonbill
 
 What is Spoonbill? Inspired by [ibis](https://ibis-project.org/docs/3.2.0/)
