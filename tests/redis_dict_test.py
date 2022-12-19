@@ -77,7 +77,7 @@ def test_redis_strict():
         store['1'] = {'1': 1}
 
 
-def test_shelve_save_load():
+def test_redis_save_load():
     tmpdir = TemporaryDirectory()
     store = RedisStore.open('redis://localhost:6379/1', strict=True)
     store.update({str(i): i for i in range(10000)})
