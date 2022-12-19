@@ -147,7 +147,7 @@ class CosmosDBStore(KeyValueStore):
             self[key] = value
 
     def _flush(self):
-        for key,value in self._iter():
+        for key, value in self._iter():
             self.container.delete_item(key, partition_key=key)
 
     def pop(self, key, default=None):

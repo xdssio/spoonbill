@@ -15,7 +15,7 @@ def test_dict_strict():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(patterns='test')) == ['test']
+    assert list(store.keys(pattern='test')) == ['test']
     assert list(store.items(patterns='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
@@ -35,7 +35,7 @@ def test_inmemory_dict():
 
     store = InMemoryStore(strict=True)
     store.set_batch(range(11), range(11))
-    assert [item[0] for item in store.scan(pattern='1+')] == [1, 10]  # scan looks at keys as strings
+    assert [item for item in store.keys(pattern='1+')] == [1, 10]  # scan looks at keys as strings
 
 
 def test_inmemory_search():
@@ -47,8 +47,6 @@ def test_inmemory_search():
     assert list(store.keys(pattern=1)) == [1]
     assert list(store.values(patterns=10)) == [10]
     assert list(store.values(patterns={'b': '2+'})) == [{'a': 2, 'b': '2'}, {'a': 20, 'b': '20'}, {'a': 21, 'b': '21'}]
-
-
 
 
 def test_inmemory_save_load():

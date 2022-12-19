@@ -1,5 +1,8 @@
-from spoonbill.datastores import KeyValueStore, VALUE
+import typing
+
+from spoonbill.datastores import KeyValueStore, VALUE, KEY
 from google.cloud import firestore
+import re
 
 
 class Firestore(KeyValueStore):
@@ -75,29 +78,43 @@ class Firestore(KeyValueStore):
     def set(self, key, value):
         return self._put_item(key, value)
 
+    def _scan_query(self, patterns: dict = None, limit: int = None):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {VALUE: patterns}
+        elif patterns is None:
+            patterns = {}
+        query = self.collection
+        for feature, value in patterns.items():
+            query = query.where(feature, '==', value)
+        if limit is not None:
+            query = query.limit(limit)
+        return query.stream()
+
     def keys(self, pattern: str = None, limit: int = None):
+        pattern = re.compile(pattern) if pattern else None
+
         def _scan():
-            for doc in self.collection.stream():
-                yield self.decode_key(doc.id)
+            for i, doc in enumerate(self.collection.stream()):
+                if i == limit:
+                    break
+                key = self.decode_key(doc.id)
+                if pattern and not pattern.match(key):
+                    continue
+                else:
+                    yield self.decode_key(doc.id)
 
-        for item in self._scan_match(_scan(), pattern=pattern, limit=limit):
-            yield item
+        for key in _scan():
+            yield key
 
-    def values(self, limit: int = None):
-        def _scan():
-            for doc in self.collection.stream():
-                yield self._from_item(doc.to_dict())
+    def values(self, patterns: dict = None, limit: int = None):
 
-        for item in self._scan_match(_scan()):
-            yield item
+        for item in self._scan_query(patterns=patterns, limit=limit):
+            yield self._from_item(item.to_dict())
 
-    def items(self, pattern: str = None, limit: int = None):
-        def _scan():
-            for doc in self.collection.stream():
-                yield self.decode_key(doc.id), self._from_item(doc.to_dict())
+    def items(self, patterns: dict = None, limit: int = None):
 
-        for item in self._scan_match(_scan(), pattern=pattern, limit=limit):
-            yield item
+        for item in self._scan_query(patterns=patterns, limit=limit):
+            yield self.decode_key(item.id), self._from_item(item.to_dict())
 
     def pop(self, key, default=None):
         value = self._get_item(key)
