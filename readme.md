@@ -69,18 +69,23 @@ store.get("key", None)
 store.delete("key")
 store.pop('key', None)
 store.popitem()
-store.keys(pattern="*", limit=10)  # only correct when using string keys
-store.items(pattern="*", limit=10)  # only correct when using string keys
+store.keys()
+store.items()
 store.values()
 'key' in store  # contains
 len(store)
-for key in store: pass # iterate
+for key in store: pass  # iterate
 store.update({'key': 'value'})
 store.set_batch(['key'], ['value'])
 store.get_batch(['key'])
 store.save('path')
 store.load('path')
 
+# Search
+store.keys(pattern="*", limit=10)
+store.items(patterns={'a': '1+', 'b': 1}, limit=10)
+store.values(patterns={'a': '1+', 'b': 1}, limit=10)
+store.values(patterns='1', limit=10)  # works if store['a']='1' and such...
 ```
 
 ### InMemoryDict
@@ -146,11 +151,14 @@ from spoonbill.datastores import PysosStore
 store = PysosStore.open('tmp.db')
 ```
 
-### RedisStore
+### Redis
 
 A wrapper around [redis-py](https://github.com/redis/redis-py) library.
 
 * When strict=False any key-value can be used, otherwise only string keys and values can be used.
+* When using keys with patterns -> the pattern is passed to redis *keys* function, so the behaviour is what you would
+  expect from redis.
+* Redis doesn't have any search for values.
 
 ```python
 from spoonbill.datastores import RedisStore
@@ -161,15 +169,12 @@ store[1] = 1
 assert store[1] == store["1"] == "1"
 
 assert list(store.keys('1*')) == ['111', '1', '11']  # redis turn every key to string
-assert list(store.scan('1*')) == ['111', '1', '11']
+assert list(store.scan('1*')) == ['111', '1', '11']  # slower but non-blocking
 
 store = RedisStore.open("redis://localhost:6379/1", strict=False)
 store[1] = lambda x: x + 1  # anything goes using cloudpickle
 assert store[1](1) == 2
 ```
-
-Question: What is the difference between *keys* and *scan*?     
-Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non-blocking.
 
 ## Serverless stores
 
@@ -225,6 +230,8 @@ Notes:
 
 * It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the CosmosDB features.
     * Example: `store['key'] = {'feature': 'value'}`
+* The scans are implemented with SQL and  `LIKE` (Regex is not implemented on Cosmos). So it is not possible to do
+  `store.keys('a*')` but `store.keys('a%')` works.
 
 Prerequisites: [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
 

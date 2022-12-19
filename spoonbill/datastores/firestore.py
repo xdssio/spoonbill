@@ -80,7 +80,7 @@ class Firestore(KeyValueStore):
             for doc in self.collection.stream():
                 yield self.decode_key(doc.id)
 
-        for item in self._to_iter(_scan(), pattern=pattern, limit=limit):
+        for item in self._scan_match(_scan(), pattern=pattern, limit=limit):
             yield item
 
     def values(self, limit: int = None):
@@ -88,7 +88,7 @@ class Firestore(KeyValueStore):
             for doc in self.collection.stream():
                 yield self._from_item(doc.to_dict())
 
-        for item in self._to_iter(_scan()):
+        for item in self._scan_match(_scan()):
             yield item
 
     def items(self, pattern: str = None, limit: int = None):
@@ -96,7 +96,7 @@ class Firestore(KeyValueStore):
             for doc in self.collection.stream():
                 yield self.decode_key(doc.id), self._from_item(doc.to_dict())
 
-        for item in self._to_iter(_scan(), pattern=pattern, limit=limit):
+        for item in self._scan_match(_scan(), pattern=pattern, limit=limit):
             yield item
 
     def pop(self, key, default=None):

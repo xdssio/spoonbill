@@ -17,8 +17,8 @@ def test_dict():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(pattern='test')) == ['test']
-    assert list(store.items(pattern='test')) == [('test', 'test')]
+    assert list(store.keys(patterns='test')) == ['test']
+    assert list(store.items(patterns='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1
@@ -50,8 +50,8 @@ def buclketdict_s3():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(pattern='test')) == ['test']
-    assert list(store.items(pattern='test')) == [('test', 'test')]
+    assert list(store.keys(patterns='test')) == ['test']
+    assert list(store.items(patterns='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1

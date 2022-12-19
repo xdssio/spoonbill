@@ -21,8 +21,8 @@ def test_cosmos_strict():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(pattern='test')) == ['test']
-    assert list(store.items(pattern='test')) == [('test', 'test')]
+    assert list(store.keys(patterns='test')) == ['test']
+    assert list(store.items(patterns='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1
@@ -46,3 +46,14 @@ def test_cosmos():
     assert store['function'](1) == 1
     store._flush()
     # store.client.delete_database(store.database_name)
+
+
+def test_cosmos_search():
+    store = CosmosDBStore.open(strict=True)
+    store._flush()
+    store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
+
+    assert list(store.items(patterns={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
+    assert list(store.keys(pattern='1%')) == ['1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '21']
+    assert list(store.values(patterns={'b': '2%'})) == [{'a': 2, 'b': '2'}, {'a': 12, 'b': '12'}, {'a': 20, 'b': '20'},
+                                                        {'a': 21, 'b': '21'}]

@@ -44,7 +44,8 @@ class CosmosDBStore(KeyValueStore):
             if VALUE in item:
                 value = self.decode_value(item[VALUE])
             else:
-                value = {k: v for k, v in item.items() if not str(key).startswith('_')}
+                value = {k: v for k, v in item.items() if not str(k).startswith('_')}
+                value.pop(CosmosDBStore.ID, None)
             key = self.decode_key(key)
             return key, value
 
@@ -93,29 +94,41 @@ class CosmosDBStore(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, pattern: str = None, limit: int = None):
+    def _iter(self, patterns: dict = None, limit: int = None):
+        patterns = patterns or {}
+        wheres = []
+        for feature, pattern in patterns.items():
+            if isinstance(pattern, str):
+                wheres.append('c.{} LIKE "%{}%"'.format(feature, pattern))
+            else:
+                wheres.append(f'c.{feature} = {pattern}'.format(feature, pattern))
         query = f"SELECT * FROM {self.container.id} c"
-        if pattern:
-            query = query + ' WHERE c.key LIKE "%{}%"'.format(pattern)
+        if wheres:
+            query = query + ' WHERE ' + ' AND '.join(wheres)
         if limit:
             query = query + f" OFFSET 0 LIMIT {limit}"
         for item in self.container.query_items(
                 query=query,
                 enable_cross_partition_query=True
         ):
-            yield item
-
-    def keys(self, pattern: str = None, limit: int = None):
-        for item in self._iter(pattern=pattern, limit=limit):
-            yield self._from_item(item)[0]
-
-    def items(self, pattern: str = None, limit: int = None):
-        for item in self._iter(pattern=pattern, limit=limit):
             yield self._from_item(item)
 
-    def values(self, pattern: str = None, limit: int = None):
-        for item in self._iter(pattern=pattern, limit=limit):
-            yield self._from_item(item)[1]
+    def keys(self, pattern: str = None, limit: int = None):
+        patterns = {KEY: pattern} if pattern else None
+        for item in self._iter(patterns=patterns, limit=limit):
+            yield item[0]
+
+    def items(self, patterns: dict = None, limit: int = None):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {VALUE: patterns}
+        for item in self._iter(patterns=patterns, limit=limit):
+            yield item
+
+    def values(self, patterns: dict = None, limit: int = None):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {KEY: patterns}
+        for item in self._iter(patterns=patterns, limit=limit):
+            yield item[1]
 
     def _update(self, items):
         for key, value in items:
@@ -134,8 +147,8 @@ class CosmosDBStore(KeyValueStore):
             self[key] = value
 
     def _flush(self):
-        for item in self._iter():
-            self.container.delete_item(item.get(CosmosDBStore.ID), partition_key=item.get(CosmosDBStore.ID))
+        for key,value in self._iter():
+            self.container.delete_item(key, partition_key=key)
 
     def pop(self, key, default=None):
         ret = self._get_item(key)

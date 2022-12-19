@@ -4,7 +4,7 @@ import re
 from typing import Sequence
 
 import cloudpickle
-from spoonbill.datastores import KeyValueStore
+from spoonbill.datastores import KeyValueStore, KEY, VALUE
 
 
 class InMemoryStore(KeyValueStore):
@@ -54,22 +54,6 @@ class InMemoryStore(KeyValueStore):
         :return:
         """
         return InMemoryStore(store=path, strict=strict)
-
-    def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
-        for key in self._to_iter(self._store.keys(), pattern, limit):
-            yield self.decode_key(key)
-
-    def values(self, limit: int = None):
-        for value in self._store.values():
-            if value is not None:
-                yield self.decode_value(value)
-
-    def items(self, pattern: str = None, limit: int = None):
-        for key, value in self._to_iter(self._store.items(), pattern, limit):
-            if value is not None:
-                yield self.decode_key(key), self.decode_value(value)
-
-    scan = items
 
     def save(self, path):
         target_path = self._get_path(path)

@@ -133,7 +133,8 @@ class RedisStore(KeyValueStore, Strict):
             yield self.decode_key(key)
 
     def values(self, *args, **kwargs):
-        kwargs.pop('pattern', None)
+        if 'patterns' in kwargs or 'pattern' in kwargs:
+            raise NotImplementedError("patterns are not supported for redis values")
         for key, value in self._items(*args, **kwargs):
             if value is None:
                 continue

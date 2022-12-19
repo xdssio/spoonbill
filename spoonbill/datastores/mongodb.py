@@ -91,25 +91,28 @@ class MongoDBStore(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, pattern: str = None, limit: int = None):
+    def _iter(self, patterns: dict = None, limit: int = None):
         params = {}
-        if pattern is not None:
-            pattern = re.compile(pattern, re.IGNORECASE)
-            params = {KEY: pattern}
+        patterns = patterns or {}
+        for feature, pattern in patterns.items():
+            if isinstance(pattern, str):
+                pattern = re.compile(pattern, re.IGNORECASE)
+            params[feature] = pattern
         return self.collection.find(**params).limit(limit) if limit else self.collection.find(params)
 
     def keys(self, pattern: str = None, limit: int = None):
-        for item in self._iter(pattern=pattern, limit=limit):
+        pattern = {KEY: pattern} if pattern else None
+        for item in self._iter(patterns=pattern, limit=limit):
             key, _ = self._from_item(item)
             yield key
 
-    def items(self, pattern: str = None, limit: int = None):
-        for item in self._iter(pattern=pattern, limit=limit):
+    def items(self, patterns: dict = None, limit: int = None):
+        for item in self._iter(patterns=patterns, limit=limit):
             key, value = self._from_item(item)
             yield key, value
 
-    def values(self, pattern: str = None, limit: int = None):
-        for item in self._iter(pattern=pattern, limit=limit):
+    def values(self, patterns: dict = None, limit: int = None):
+        for item in self._iter(patterns=patterns, limit=limit):
             _, value = self._from_item(item)
             yield value
 
@@ -117,7 +120,6 @@ class MongoDBStore(KeyValueStore):
         operations = []
         for key, value in items:
             item = self._to_item(key, value)
-            print(item)
             operations.append(
                 pymongo.ReplaceOne(filter={ID: item.pop(ID)},
                                    replacement=item, upsert=True))
@@ -172,3 +174,6 @@ class MongoDBStore(KeyValueStore):
         self.collection.insert_many(examples)
 
         return self
+
+    def find(self, *args, **kwargs):
+        return self.collection.find(*args, **kwargs)

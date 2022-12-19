@@ -118,36 +118,53 @@ class KeyValueStore(Strict):
                 return False
         return True
 
-    def _to_iter(self, sequence: typing.Sequence, pattern: str = None, limit: int = None):
-        if pattern:
-            pattern = re.compile(pattern)
+    def _from_item(self, item):
+        if item:
+            return self.decode_key(item[0]), self.decode_value(item[1])
+
+    def _scan_match(self, sequence: typing.Sequence, patterns: dict = None, limit: int = None):
+        patterns = patterns or {}
+        filters = []
+        for feature, pattern in patterns.items():
+            if isinstance(pattern, str):
+                re_pattern = re.compile(pattern)
+                validate = lambda x: re_pattern.match(str(x.get(feature)))
+            else:
+                validate = lambda x: x.get(feature) == pattern
+            filters.append(validate)
+
         for i, item in enumerate(sequence):
             if i == limit:
                 break
-            if not pattern:
-                yield item
+            key, value = self._from_item(item)
+            if not patterns:
+                yield key, value
             else:
-                if isinstance(item, tuple):
-                    key = item[0]
-                elif isinstance(item, dict):
-                    key = item.get(KEY)
+                new_item = {KEY: key}
+                if isinstance(value, dict):
+                    new_item.update(value)
                 else:
-                    key = item
-                key = self.decode_key(key)
-                if pattern.match(str(key)):
-                    yield item
+                    new_item[VALUE] = value
 
-    def keys(self, *args, **kwargs):
-        for key in self._store.keys(*args, **kwargs):
-            yield self.decode_key(key)
+                if all([validate(new_item) for validate in filters]):
+                    yield key, value
 
-    def values(self):
-        for value in self._store.values():
-            yield self.decode_value(value)
+    def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
+        patterns = {KEY: pattern} if pattern else None
+        for key, value in self._scan_match(self._store.items(), patterns=patterns, limit=limit):
+            yield key
 
-    def items(self):
-        for key, value in self._store.items():
-            yield self.decode_key(key), self.decode_value(value)
+    def values(self, patterns: dict = None, limit: int = None):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {VALUE: patterns}
+        for _, value in self._scan_match(self._store.items(), patterns, limit):
+            yield value
+
+    def items(self, patterns: dict = None, limit: int = None):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {KEY: patterns}
+        for key, value in self._scan_match(self._store.items(), patterns, limit):
+            yield key, value
 
     def pop(self, key, default=None):
         ret = self._store.pop(self.decode_key(key))
@@ -226,19 +243,24 @@ class ContextStore(KeyValueStore, Strict):
             return len(store)
 
     def keys(self, pattern: str = None, limit: int = None, **kwargs):
+        patterns = {KEY: pattern} if pattern else None
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for key in self._to_iter(store.keys(), pattern=pattern, limit=limit):
-                yield self.decode_key(key)
+            for key, _ in self._scan_match(store.items(), patterns=patterns, limit=limit):
+                yield key
 
-    def values(self):
+    def values(self, patterns: str = None, limit: int = None, **kwargs):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {VALUE: patterns}
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for value in store.values():
-                yield self.decode_value(value)
+            for item in self._scan_match(store.items(), patterns=patterns, limit=limit):
+                yield item[1]
 
-    def items(self, pattern: str = None, limit: int = None, **kwargs):
+    def items(self, patterns: str = None, limit: int = None, **kwargs):
+        if patterns is not None and not hasattr(patterns, 'items'):
+            patterns = {KEY: patterns}
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for item in self._to_iter(store.items(), pattern=pattern, limit=limit):
-                yield self.decode_key(item[0]), self.decode_value(item[1])
+            for item in self._scan_match(store.items(), patterns=patterns, limit=limit):
+                yield item
 
     def get(self, key, default=None):
         with self.manager.open(self.store_path, **self.open_params) as store:

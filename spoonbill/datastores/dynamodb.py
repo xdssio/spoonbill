@@ -12,7 +12,6 @@ ITEM = 'Item'
 DYNAMODB = 'dynamodb'
 
 
-
 class DynamoDBStore(KeyValueStore):
 
     def __init__(self, table_name: str, key_type: str = 'S', **kwargs):
@@ -183,7 +182,7 @@ class DynamoDBStore(KeyValueStore):
 
     def keys(self, pattern: str = None, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
-        for item in self._to_iter(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
+        for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
             yield item[0]
 
     def values(self, limit: int = None):
@@ -193,18 +192,23 @@ class DynamoDBStore(KeyValueStore):
 
     def items(self, pattern: str = None, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
-        for item in self._to_iter(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
+        for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
             yield item
 
-    def _flush(self):
-        description = self.description['Table']
+    def _flush(self, delete_table: bool = False):
         count = len(self)
-        self._delete_table(self.table_name)
-        time.sleep(2)
-        self.create_table(table_name=self.table_name,
-                          key_schema=description['KeySchema'],
-                          attribute_definitions=description['AttributeDefinitions'],
-                          billing_mode=description['BillingModeSummary']['BillingMode'])
+        if delete_table:
+            description = self.description['Table']
+
+            self._delete_table(self.table_name)
+            time.sleep(2)
+            self.create_table(table_name=self.table_name,
+                              key_schema=description['KeySchema'],
+                              attribute_definitions=description['AttributeDefinitions'],
+                              billing_mode=description['BillingModeSummary']['BillingMode'])
+        else:
+            for key in self:
+                self.delete(key)
         return count
 
     def pop(self, key, default=None):
@@ -222,7 +226,6 @@ class DynamoDBStore(KeyValueStore):
 
     def _to_dynamodb_key(self, key):
         return {KEY: {self.key_type: self._to_key_type(key)}}
-
 
     def get_batch(self, keys, default=None):
         from cerealbox.dynamo import from_dynamodb_json

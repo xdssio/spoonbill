@@ -22,8 +22,8 @@ def test_lmdb():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(pattern='test')) == ['test']
-    assert list(store.items(pattern='test')) == [('test', 'test')]
+    assert list(store.keys(patterns='test')) == ['test']
+    assert list(store.items(patterns='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1
@@ -52,3 +52,16 @@ def test_lmdb_save_load():
     assert len(store) == 0
     store = LmdbStore(local_path).load(other_path)
     assert len(store) == 1
+
+
+def test_lmdb_search():
+    tmpdir = TemporaryDirectory()
+    path = tmpdir.name + '/tmp.db'
+    self = store = LmdbStore.open(path)
+    store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
+    store.update({1: 10, 2: 20})
+    assert list(store.items(patterns={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
+    assert set(store.keys(pattern='1+')) == {1, '13', '10', '14', '1', '11', '16', '17', '12', '15', '18', '19'}
+    assert list(store.keys(pattern=1)) == [1]
+    assert list(store.values(patterns=10)) == [10]
+    assert list(store.values(patterns={'b': '2+'})) == [{'a': 2, 'b': '2'}, {'a': 20, 'b': '20'}, {'a': 21, 'b': '21'}]
