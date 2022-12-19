@@ -6,10 +6,9 @@ run anywhere.
 
 ## Feature
 
-1. A `strict=False` mode is available to allow for more flexible data types - anything which is cloudpickle-able will work
-including classes and functions.
+1. A `strict=False` mode is available to allow for more flexible data types - anything which is cloudpickle-able will
+   work including classes and functions.
 2. A unified interface for all data stores.
-
 
 ## Installation
 
@@ -39,9 +38,9 @@ pip install spoonbill
 | get_batch                    | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
 | set_batch                    | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
 | persistence                  | X            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| save/load                    | √            | Auto                       | Save only                                  | √                                                   | √                                           | √                                                       | Serverless                                       | Serverless                                                  | Serverless                                                                                             | Serverless                              |
+| save/load                    | √            | Auto                       | Save (experimental)                        | √                                                   | √                                           | √                                                       | Serverless                                       | Serverless                                                  | Serverless                                                                                             | √ (strict)                              |
 | key type (Not strict/strict) | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | String                                           | Any/String                                                  | String                                                                                                 | String                                  |
-| value_type                   | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | Jsonable                                         | Any                                                         | Any                                                                                                    | Any                                     |
+| value_type                   | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | Jsonable                                         | Any                                                         | Any                                                                                                    | Any/Dict[str,Any]                       |
 
 ## Usage
 
@@ -53,7 +52,6 @@ All the classes have the same interface, so you can use them interchangeably.
 ## APIs
 
 ```python
-from spoonbill.datastores import InMemoryStore
 from spoonbill.datastores import InMemoryStore
 
 store = InMemoryStore()
@@ -73,6 +71,8 @@ len(store)
 for key in store: pass
 store.pop('key', None)
 store.popitem()
+store.save('path')
+store.load('path')
 ```
 
 ### InMemoryDict
@@ -87,6 +87,13 @@ case, to have a common interface which includes the scan operation.
 from spoonbill.datastores import InMemoryStore
 
 store = InMemoryStore()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
+
+# Also works with any dict-like object
+from collections import defaultdict, OrderedDict, Counter
+
+store = InMemoryStore(defaultdict)
+store = InMemoryStore(OrderedDict)
+store = InMemoryStore(Counter)
 ``` 
 
 ### BucketDict
@@ -94,10 +101,10 @@ store = InMemoryStore()  # InMemoryDict.open() or InMemoryDict.open('path/to/fil
 Requirements:   
 ```pip install cloudpathlib```
 
-This dict is bucket by a file locally or on a cloud provider (S3, GS, AZ). It is **very slow**, but good for as a cheap
-persisted key-value store.
+This dict is implemented as key-value files locally or on a cloud provider (S3, GS, AZ). It is **very slow**, but good
+for as a cheap persisted key-value stor.
 
-For faster applications with cloud persistence, use InMemoryDict and save/load to the cloud.
+For faster applications with cloud persistence, use InMemoryStore/LmdbStore and save/load to the cloud.
 
 ### LmdbDict
 
@@ -158,12 +165,20 @@ assert list(store.scan('1*')) == ['111', '1', '11']
 Question: What is the difference between *keys* and *scan*?     
 Answer: *keys()* is faster and blocking, while scan is (slightly) slower and non-blocking.
 
+## Serverless stores
+
+Key-values stores.
+
+* Recommended to use as strict=True to enjoy all the benefits of backends.
+* Recommended to use values as dict values, as they are more efficient to scan.
+    * Example: `store['key'] = {'a': 1, 'b': 2}`
+
 ### DynamoDBDict
 
 Notes:
 
 * It is always recommended to set values which are a dict {attribute_name: value} to enjoy all the dynamodb features.
-* Keys are always strings ('S'), numbers ('N') or bytes ('B').
+* Keys are defined per table as either strings ('S'), numbers ('N') or bytes ('B').
 * If you set a primitive number value, it will return as float (:
 * cerealbox is required for *get_batch*: ```pip install cerealbox```
 
@@ -206,8 +221,9 @@ Azure Cosmos DB Table Notes:
 
 * It is recommended use dict-values {attribute_name: value} + `strict=True` to enjoy all the CosmosDB features.
     * Example: `store['key'] = {'feature': 'value'}`
-      Prerequisites:
-      [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
+
+Prerequisites:   
+[Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?tabs=azure-portal%2Clinux)
 
 Requirements:
 
@@ -224,6 +240,7 @@ store = CosmosDBStore.open(database='db',
 
 ### MongoDB
 
+* Save/load is only implemented for `strict=True`.
 Requirements:
 
 ```pip install pymongo```

@@ -33,7 +33,7 @@ class MongoDBStore(KeyValueStore):
     def _to_item_value(self, value):
         if isinstance(value, dict):
             return value
-        return {VALUE: self.decode_value(value)}
+        return {VALUE: self.encode_value(value)}
 
     def _to_item(self, key, value):
         key, value = self.encode_key(key), self._to_item_value(value)
@@ -117,6 +117,7 @@ class MongoDBStore(KeyValueStore):
         operations = []
         for key, value in items:
             item = self._to_item(key, value)
+            print(item)
             operations.append(
                 pymongo.ReplaceOne(filter={ID: item.pop(ID)},
                                    replacement=item, upsert=True))
@@ -169,12 +170,5 @@ class MongoDBStore(KeyValueStore):
         data = path.read_bytes()
         examples = bson.decode_all(data)
         self.collection.insert_many(examples)
-        # operations = []
-        # for doc in examples:
-        #     key = doc.pop(KEY)
-        #     operations.append(
-        #         pymongo.ReplaceOne(filter={ID: key},
-        #                            replacement={VALUE: value, KEY: key}, upsert=True))
-        # self.collection.bulk_write(operations)
 
         return self

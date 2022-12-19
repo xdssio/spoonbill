@@ -46,16 +46,18 @@ def test_mongodb():
     self = store = MongoDBStore.open(strict=False)
     store._flush()
     store['function'] = lambda x: x + 1
+    store[1] = 1
 
 
 def mongodb_save_load():
     tmpdir = TemporaryDirectory()
     store = MongoDBStore.open(strict=True)
     store._flush()
-    store.update({i: {i: i} for i in range(1000)})
+    N = 1000
+    store.update({i: {str(i): i} for i in range(N)})
     path = tmpdir.name + '/cloud.db'
     store.save(path)
     store._flush()
     assert len(store) == 0
     store = MongoDBStore().load(path)
-    assert len(store) == 1
+    assert len(store) == N
