@@ -77,6 +77,9 @@ class BucketStore(KeyValueStore):
         self._put_item(key, value)
 
     def __delitem__(self, key):
+        self.delete(key)
+
+    def delete(self, key):
         file = self._to_key(key)
         if not file.is_file():
             raise KeyError(key)
@@ -92,29 +95,37 @@ class BucketStore(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, pattern: str = None, limit: int = None):
+    def _iter_keys(self, pattern: str = None, limit: int = None):
         iterator = self.bucket.glob(pattern) if pattern is not None else self.bucket.iterdir()
         for i, key in enumerate(iterator):
             if i == limit:
                 break
             if key.name == self.COUNT_KEY:
                 continue
-            yield key
-
-    def keys(self, pattern: str = None, limit: int = None):
-        for key in self._iter(pattern, limit):
             if key.is_file():
-                yield self.decode_key(key.name)
+                yield key
 
-    def items(self, pattern: str = None, limit: int = None):
-        for key in self._iter(pattern, limit):
-            if key.is_file():
-                yield self.decode_key(key.name), self.decode_value(key.read_text())
+    def _to_key_value(self, key):
+        return self.decode_key(key.name), self.decode_value(key.read_text())
+
+    def scan(self, pattern: str = None, limit: int = None):
+        for key in self._iter_keys(pattern, limit):
+            yield self.decode_key(key.name)
+
+    def keys(self, ids: list = None, limit: int = None):
+        if ids: ids = set(ids)
+        for key in self._iter(None, limit=limit):
+            key = self.decode_key(key.name)
+            if not ids or key in ids:
+                yield key
+
+    def items(self, patterns: dict = None, limit: int = None):
+        for key, value in self._scan_match(self._iter_keys(patterns=None, limit=limit), patterns=patterns, limit=limit):
+            yield key, value
 
     def values(self):
-        for file in self._iter():
-            if file.is_file():
-                yield self.decode_value(file.read_text())
+        for key, value in self._scan_match(self._iter_keys(patterns=None, limit=limit), patterns=patterns, limit=limit):
+            yield value
 
     def __contains__(self, item):
         return self._to_key(item).is_file()
@@ -145,17 +156,7 @@ class BucketStore(KeyValueStore):
         self.__delitem__(key)
         return key, value
 
-    def _update(self, items):
+    def update(self, d):
         for key, value in items:
             self[key] = value
-
-    def update(self, d):
-        self._update(d.items())
         return self
-
-    def set_batch(self, keys, values):
-        return self._update(zip(keys, values))
-
-    def get_batch(self, keys, default=None):
-        for key in keys:
-            yield self.get(key, default)

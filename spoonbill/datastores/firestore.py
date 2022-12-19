@@ -33,7 +33,7 @@ class Firestore(KeyValueStore):
             return value
         return {VALUE: self.encode_value(value)}
 
-    def _from_item(self, item):
+    def _to_key_value(self, item):
         if item is not None:
             if VALUE in item:
                 item = item[VALUE]
@@ -42,7 +42,7 @@ class Firestore(KeyValueStore):
     def _get_item(self, key: str):
         ref = self.collection.document(self.encode_key(key)).get()
         if ref.exists:
-            return self._from_item(ref.to_dict())
+            return self._to_key_value(ref.to_dict())
         return None
 
     def _put_item(self, key: str, value: str):
@@ -90,31 +90,30 @@ class Firestore(KeyValueStore):
             query = query.limit(limit)
         return query.stream()
 
-    def keys(self, pattern: str = None, limit: int = None):
+    def scan(self, pattern: str = None, limit: int = None):
         pattern = re.compile(pattern) if pattern else None
+        for i, doc in enumerate(self.collection.stream()):
+            if i == limit:
+                break
+            key = self.decode_key(doc.id)
+            if pattern and not pattern.match(key):
+                continue
+            else:
+                yield self.decode_key(doc.id)
 
-        def _scan():
-            for i, doc in enumerate(self.collection.stream()):
-                if i == limit:
-                    break
-                key = self.decode_key(doc.id)
-                if pattern and not pattern.match(key):
-                    continue
-                else:
-                    yield self.decode_key(doc.id)
-
-        for key in _scan():
-            yield key
+    def keys(self, ids: str = None, limit: int = None):
+        if ids: ids = set(ids)
+        for key in self.scan(pattern=None, limit=limit):
+            if not ids or key in ids:
+                yield key
 
     def values(self, patterns: dict = None, limit: int = None):
-
         for item in self._scan_query(patterns=patterns, limit=limit):
-            yield self._from_item(item.to_dict())
+            yield self._to_key_value(item.to_dict())
 
     def items(self, patterns: dict = None, limit: int = None):
-
         for item in self._scan_query(patterns=patterns, limit=limit):
-            yield self.decode_key(item.id), self._from_item(item.to_dict())
+            yield self.decode_key(item.id), self._to_key_value(item.to_dict())
 
     def pop(self, key, default=None):
         value = self._get_item(key)
@@ -129,31 +128,15 @@ class Firestore(KeyValueStore):
             return key, value
         raise KeyError('popitem(): dictionary is empty')
 
-    def _update(self, items):
-        batch = self.client.batch()
-        for i, (key, value) in enumerate(items):
-            ref = self.collection.document(self.encode_key(key))
-            batch.set(ref, self._to_item(value))
-        batch.commit()
-        return i
-
     def update(self, d):
         """
        Insert a batch of items into the table in chunks of 25 items.
        :param d: A dictionary like object with items() method
        :return: Count of items inserted
        """
-        self._update(d.items())
+        batch = self.client.batch()
+        for i, (key, value) in enumerate(items):
+            ref = self.collection.document(self.encode_key(key))
+            batch.set(ref, self._to_item(value))
+        batch.commit()
         return self
-
-    def set_batch(self, keys, values):
-        """
-         Insert a batch of items into the table in chunks of 25 items.
-         :param d: A dictionary like object with items() method
-         :return: Count of items inserted
-         """
-        return self._update(zip(keys, values))
-
-    def get_batch(self, keys, default=None):
-        for key in keys:
-            yield self.get(key, default)

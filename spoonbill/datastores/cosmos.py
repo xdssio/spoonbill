@@ -38,7 +38,7 @@ class CosmosDBStore(KeyValueStore):
             item.update(value)
         return item
 
-    def _from_item(self, item):
+    def _to_key_value(self, item):
         if item is not None:
             key = item.pop(KEY)
             if VALUE in item:
@@ -55,7 +55,7 @@ class CosmosDBStore(KeyValueStore):
     def _get_item(self, key):
         key = self.encode_key(key)
         with contextlib.suppress(azure.cosmos.exceptions.CosmosResourceNotFoundError):
-            return self._from_item(self.container.read_item(item=key, partition_key=key))
+            return self._to_key_value(self.container.read_item(item=key, partition_key=key))
 
     def __len__(self):
         return next(
@@ -94,7 +94,7 @@ class CosmosDBStore(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, patterns: dict = None, limit: int = None):
+    def _iter_items(self, patterns: dict = None, limit: int = None):
         patterns = patterns or {}
         wheres = []
         for feature, pattern in patterns.items():
@@ -111,24 +111,41 @@ class CosmosDBStore(KeyValueStore):
                 query=query,
                 enable_cross_partition_query=True
         ):
-            yield self._from_item(item)
+            yield self._to_key_value(item)
 
-    def keys(self, pattern: str = None, limit: int = None):
-        patterns = {KEY: pattern} if pattern else None
-        for item in self._iter(patterns=patterns, limit=limit):
+    def _iter_keys(self, where: str = None, limit: int = None):
+        query = f"SELECT * FROM {self.container.id} c"
+        if where:
+            query = query + where
+        if limit:
+            query = query + f" OFFSET 0 LIMIT {limit}"
+        for item in self.container.query_items(
+                query=query,
+                enable_cross_partition_query=True
+        ):
+            yield self._to_key_value(item)
+
+    def keys(self, ids: list = None, limit: int = None):
+        where = ' WHERE ' + 'c.id IN ({})'.format(','.join(ids)) if ids else None
+        for item in self._iter_keys(where=where, limit=limit):
             yield item[0]
 
     def items(self, patterns: dict = None, limit: int = None):
         if patterns is not None and not hasattr(patterns, 'items'):
             patterns = {VALUE: patterns}
-        for item in self._iter(patterns=patterns, limit=limit):
+        for item in self._iter_items(patterns=patterns, limit=limit):
             yield item
 
     def values(self, patterns: dict = None, limit: int = None):
         if patterns is not None and not hasattr(patterns, 'items'):
             patterns = {KEY: patterns}
-        for item in self._iter(patterns=patterns, limit=limit):
+        for item in self._iter_items(patterns=patterns, limit=limit):
             yield item[1]
+
+    def scan(self, pattern: str = None, limit: int = None):
+        where = ' WHERE ' + 'c.id LIKE "%{}%"'.format(pattern) if pattern else None
+        for item in self._iter_keys(where=where, limit=limit):
+            yield item[0]
 
     def _update(self, items):
         for key, value in items:
@@ -138,16 +155,8 @@ class CosmosDBStore(KeyValueStore):
         self._update(d.items())
         return self
 
-    def get_batch(self, keys, default=None):
-        for key in keys:
-            yield self.get(key, default)
-
-    def set_batch(self, keys, values):
-        for key, value in zip(keys, values):
-            self[key] = value
-
     def _flush(self):
-        for key, value in self._iter():
+        for key, value in self._iter_items():
             self.container.delete_item(key, partition_key=key)
 
     def pop(self, key, default=None):
@@ -160,9 +169,9 @@ class CosmosDBStore(KeyValueStore):
     def popitem(self):
         if len(self) == 0:
             raise KeyError('popitem(): dictionary is empty')
-        item = next(self._iter(limit=1))
+        item = next(self._iter_items(limit=1))
         self._delete_item(item.get(KEY))
-        _, value = self._from_item(item)
+        _, value = self._to_key_value(item)
         return value
 
     def encode_key(self, key):

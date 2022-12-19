@@ -94,7 +94,7 @@ class DynamoDBStore(KeyValueStore):
             return {**{KEY: key}, **value}
         return {KEY: key, VALUE: value}
 
-    def _from_item(self, item):
+    def _to_key_value(self, item):
         key = item.pop(KEY)
 
         return key, self._process_item(item)
@@ -102,7 +102,7 @@ class DynamoDBStore(KeyValueStore):
     def _get_item(self, key: str):
         response = self.table.get_item(TableName=self.table_name, Key=self._to_key(key))
         if ITEM in response:
-            return self._from_item(response[ITEM])
+            return self._to_key_value(response[ITEM])
 
     def _put_item(self, key: str, value: str):
         self.table.put_item(TableName=self.table_name, Item=self._to_item(key, value))
@@ -151,7 +151,7 @@ class DynamoDBStore(KeyValueStore):
                     params['ExclusiveStartKey'] = start_key
                 response = self.client.scan(**params)
                 for item in response.get('Items', []):
-                    yield self._from_item(item)
+                    yield self._to_key_value(item)
                 start_key = response.get('LastEvaluatedKey', None)
                 done = start_key is None
         except botocore.exceptions.ClientError as err:
@@ -171,7 +171,7 @@ class DynamoDBStore(KeyValueStore):
                     params['ExclusiveStartKey'] = start_key
                 response = self.table.scan(**params)
                 for item in response.get('Items', []):
-                    yield self._from_item(item)
+                    yield self._to_key_value(item)
                 start_key = response.get('LastEvaluatedKey', None)
                 done = start_key is None
         except botocore.exceptions.ClientError as err:
@@ -180,10 +180,21 @@ class DynamoDBStore(KeyValueStore):
                 err.response['Error']['Code'], err.response['Error']['Message'])
             raise
 
-    def keys(self, pattern: str = None, limit: int = None):
-        params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
-        for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
-            yield item[0]
+    def _scan_by_keys(self, keys: str):
+        from cerealbox.dynamo import from_dynamodb_json
+        responses = self.client.batch_get_item(
+            RequestItems={self.table_name: {'Keys': [self._to_dynamodb_key(key) for key in keys]}})
+        for item in responses['Responses'][self.table_name]:
+            yield self._to_key_value(from_dynamodb_json(item))[1]
+
+    def keys(self, ids: list = None, limit: int = None):
+        if ids:
+            for key in self.scan_by_key(ids, limit):
+                yield key
+        else:
+            params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
+            for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=None, limit=limit):
+                yield item[0]
 
     def values(self, limit: int = None):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
@@ -194,6 +205,11 @@ class DynamoDBStore(KeyValueStore):
         params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
         for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
             yield item
+
+    def scan(self, pattern: str = None, limit: int = None):
+        params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
+        for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
+            yield item[0]
 
     def _flush(self, delete_table: bool = False):
         count = len(self)
@@ -227,12 +243,7 @@ class DynamoDBStore(KeyValueStore):
     def _to_dynamodb_key(self, key):
         return {KEY: {self.key_type: self._to_key_type(key)}}
 
-    def get_batch(self, keys, default=None):
-        from cerealbox.dynamo import from_dynamodb_json
-        responses = self.client.batch_get_item(
-            RequestItems={self.table_name: {'Keys': [self._to_dynamodb_key(key) for key in keys]}})
-        for item in responses['Responses'][self.table_name]:
-            yield self._from_item(from_dynamodb_json(item))[1]
+
 
     def _insert_items(self, items):
         count = 0
@@ -251,10 +262,3 @@ class DynamoDBStore(KeyValueStore):
         self._insert_items(d.items())
         return self
 
-    def set_batch(self, keys, values):
-        """
-         Insert a batch of items into the table in chunks of 25 items.
-         :param d: A dictionary like object with items() method
-         :return: Count of items inserted
-         """
-        return self._insert_items(zip(keys, values))

@@ -41,7 +41,7 @@ class MongoDBStore(KeyValueStore):
         item.update(value)
         return item
 
-    def _from_item(self, item):
+    def _to_key_value(self, item):
         if item is None:
             return None
         key = self.decode_key(item.pop(KEY))
@@ -54,7 +54,7 @@ class MongoDBStore(KeyValueStore):
         self.collection.insert_one(self._to_item(key, value))
 
     def _get_item(self, key):
-        return self._from_item(self.collection.find_one({ID: self.encode_key(key)}))
+        return self._to_key_value(self.collection.find_one({ID: self.encode_key(key)}))
 
     def __len__(self):
         return self.collection.count_documents({})
@@ -100,20 +100,26 @@ class MongoDBStore(KeyValueStore):
             params[feature] = pattern
         return self.collection.find(**params).limit(limit) if limit else self.collection.find(params)
 
-    def keys(self, pattern: str = None, limit: int = None):
+    def scan(self, pattern: str = None, limit: int = None):
         pattern = {KEY: pattern} if pattern else None
         for item in self._iter(patterns=pattern, limit=limit):
-            key, _ = self._from_item(item)
+            key, _ = self._to_key_value(item)
             yield key
+
+    def keys(self, ids: str = None, limit: int = None):
+        params = {ID: {'$in': [self.encode_key(key) for key in ids]}} if ids else {}
+        for item in self.collection.find(**params):
+            key, value = self._to_key_value(item)
+            yield value
 
     def items(self, patterns: dict = None, limit: int = None):
         for item in self._iter(patterns=patterns, limit=limit):
-            key, value = self._from_item(item)
+            key, value = self._to_key_value(item)
             yield key, value
 
     def values(self, patterns: dict = None, limit: int = None):
         for item in self._iter(patterns=patterns, limit=limit):
-            _, value = self._from_item(item)
+            _, value = self._to_key_value(item)
             yield value
 
     def _update(self, items):
@@ -133,7 +139,7 @@ class MongoDBStore(KeyValueStore):
     def get_batch(self, keys, default=None):
         encoded_keys = [self.encode_key(key) for key in keys]
         for item in self.collection.find({ID: {'$in': encoded_keys}}):
-            key, value = self._from_item(item)
+            key, value = self._to_key_value(item)
             yield value
 
     def set_batch(self, keys, values):

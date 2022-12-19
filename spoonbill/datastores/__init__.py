@@ -118,7 +118,7 @@ class KeyValueStore(Strict):
                 return False
         return True
 
-    def _from_item(self, item):
+    def _to_key_value(self, item):
         if item:
             return self.decode_key(item[0]), self.decode_value(item[1])
 
@@ -128,31 +128,31 @@ class KeyValueStore(Strict):
         for feature, pattern in patterns.items():
             if isinstance(pattern, str):
                 re_pattern = re.compile(pattern)
-                validate = lambda x: re_pattern.match(str(x.get(feature)))
+                is_valid = lambda x: re_pattern.match(str(x.get(feature)))
             else:
-                validate = lambda x: x.get(feature) == pattern
-            filters.append(validate)
+                is_valid = lambda x: x.get(feature) == pattern
+            filters.append(is_valid)
 
         for i, item in enumerate(sequence):
             if i == limit:
                 break
-            key, value = self._from_item(item)
+            key, value = self._to_key_value(item)
             if not patterns:
                 yield key, value
             else:
-                new_item = {KEY: key}
-                if isinstance(value, dict):
-                    new_item.update(value)
-                else:
-                    new_item[VALUE] = value
-
-                if all([validate(new_item) for validate in filters]):
+                if VALUE in value:
+                    value = value[VALUE]
+                if all([validate(value) for validate in filters]):
                     yield key, value
 
-    def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
-        patterns = {KEY: pattern} if pattern else None
-        for key, value in self._scan_match(self._store.items(), patterns=patterns, limit=limit):
-            yield key
+    def keys(self, ids: list = None, limit: int = None, *args, **kwargs):
+        if ids: ids = set(ids)
+        for i, key in enumerate(self._store.keys()):
+            key = self.decode_key(key)
+            if i == limit:
+                break
+            if not ids or key in ids:
+                yield key
 
     def values(self, patterns: dict = None, limit: int = None):
         if patterns is not None and not hasattr(patterns, 'items'):
@@ -165,6 +165,15 @@ class KeyValueStore(Strict):
             patterns = {KEY: patterns}
         for key, value in self._scan_match(self._store.items(), patterns, limit):
             yield key, value
+
+    def scan(self, pattern: str = None):
+        is_valid = lambda x: True
+        if pattern is not None:
+            re_pattern = re.compile(pattern)
+            is_valid = lambda x: re_pattern.match(x) if isinstance(x, str) else False
+        for key in self.keys():
+            if is_valid(key):
+                yield key
 
     def pop(self, key, default=None):
         ret = self._store.pop(self.decode_key(key))
@@ -190,29 +199,6 @@ class KeyValueStore(Strict):
     def update(self, d):
         self._store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
         return self
-
-    def get_batch(self, keys, default=None):
-        for key in keys:
-            ret = self.get(self.encode_key(key))
-            if ret is None:
-                yield default
-            else:
-                yield self.decode_value(ret)
-
-    def set_batch(self, keys, values):
-        for key, value in zip(keys, values):
-            self.set(self.encode_key(key), self.encode_value(value))
-        return True
-
-    def scan(self, pattern: str = None, count: int = None, **kwargs):
-        if count is not None:
-            warnings.warn('count is not supported in MemoryStore')
-        if not pattern:
-            pattern = "[\s\S]*"
-        pattern = re.compile(pattern)
-        for key in self.keys():
-            if pattern.match(str(key)):
-                yield key
 
     def __repr__(self):
         size = len(self)
@@ -242,25 +228,30 @@ class ContextStore(KeyValueStore, Strict):
         with self.manager.open(self.store_path, **self.open_params) as store:
             return len(store)
 
-    def keys(self, pattern: str = None, limit: int = None, **kwargs):
-        patterns = {KEY: pattern} if pattern else None
+    def keys(self, ids: list = None, limit: int = None, **kwargs):
+        if ids: ids = set(ids)
         with self.manager.open(self.store_path, **self.open_params) as store:
-            for key, _ in self._scan_match(store.items(), patterns=patterns, limit=limit):
-                yield key
+            for i, key in enumerate(store.keys()):
+                key = self.decode_key(key)
+                if i == limit:
+                    break
+                if not ids or key in ids:
+                    yield key
 
-    def values(self, patterns: str = None, limit: int = None, **kwargs):
+    def _iter_items(self, patterns: dict = None, limit: int = None):
         if patterns is not None and not hasattr(patterns, 'items'):
             patterns = {VALUE: patterns}
         with self.manager.open(self.store_path, **self.open_params) as store:
             for item in self._scan_match(store.items(), patterns=patterns, limit=limit):
-                yield item[1]
+                yield item
+
+    def values(self, patterns: str = None, limit: int = None, **kwargs):
+        for item in self._iter_items(patterns, limit):
+            yield item[1]
 
     def items(self, patterns: str = None, limit: int = None, **kwargs):
-        if patterns is not None and not hasattr(patterns, 'items'):
-            patterns = {KEY: patterns}
-        with self.manager.open(self.store_path, **self.open_params) as store:
-            for item in self._scan_match(store.items(), patterns=patterns, limit=limit):
-                yield item
+        for item in self._iter_items(patterns, limit):
+            yield item
 
     def get(self, key, default=None):
         with self.manager.open(self.store_path, **self.open_params) as store:
@@ -311,8 +302,6 @@ class ContextStore(KeyValueStore, Strict):
     def load(self, path):
         self._cp(path, self.store_path)
         return self
-
-    scan = items
 
 
 from .inmemory import InMemoryStore
