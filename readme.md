@@ -1,4 +1,8 @@
-![Logo](https://github.com/xdssio/spoonbill/blob/main/assests/logo.png)
+
+<p align="center">
+   <img src="https://github.com/xdssio/spoonbill/blob/main/assests/logo.png" alt="logo" width="200" />
+</p>
+   
 
 # Spoonbill
 
