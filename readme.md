@@ -1,8 +1,6 @@
-
 <p align="center">
    <img src="https://github.com/xdssio/spoonbill/blob/main/assests/logo.png" alt="logo" width="200" />
 </p>
-   
 
 # Spoonbill
 
@@ -22,12 +20,6 @@ For fast prototyping, testing, and simplification of data pipelines.
 
 ```bash
 pip install spoonbill
-```
-
-## Usage
-
-```
-df['user']
 ```
 
 ## Operations map
