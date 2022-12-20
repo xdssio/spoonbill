@@ -13,6 +13,10 @@ class ShelveStore(ContextStore, Strict):
         self.strict = strict
         self.as_string = True
 
+    @property
+    def context(self):
+        return shelve.open(self.store_path, flag="c", writeback=True)
+
     @classmethod
     def from_db(cls, path, strict: bool = False):
         return ShelveStore(path=path, strict=strict)

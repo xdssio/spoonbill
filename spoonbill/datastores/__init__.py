@@ -203,30 +203,28 @@ class KeyValueStore(Strict):
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
 
-class ContextStore(KeyValueStore, Strict):
-    store_path: str = None
-    manager: typing.Any = None
-    open_params: dict = {}
+class ContextStore(KeyValueStore, Strict):    
+    context = typing.Any = None
 
     def __getitem__(self, item):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             return self.decode_value(store[self.encode_key(item)])
 
     def __setitem__(self, key, value):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             store[self.encode_key(key)] = self.encode_value(value)
 
     def __contains__(self, item):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             return self.encode_key(item) in store
 
     def __len__(self):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             return len(store)
 
     def keys(self, pattern: str = None, limit: int = None, **kwargs):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             for key in store.keys():
                 key = self.decode_key(key)
                 if is_valid(key):
@@ -235,13 +233,13 @@ class ContextStore(KeyValueStore, Strict):
     def _iter_items(self, conditions: dict = None, limit: int = None):
         if conditions is not None and not hasattr(conditions, 'items'):
             conditions = {VALUE: conditions}
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             for item in self._scan_match(store.items(), conditions=conditions, limit=limit):
                 yield item
 
     def values(self, keys: list = None, limit: int = None, default=None):
         if keys:
-            with self.manager.open(self.store_path, **self.open_params) as store:
+            with self.context as store:
                 for key in keys:
                     value = store.get(self.encode_key(key))
                     if value is None:
@@ -257,28 +255,28 @@ class ContextStore(KeyValueStore, Strict):
             yield item
 
     def get(self, key, default=None):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             key = self.encode_key(key)
             if key in store:
                 return self.decode_value(store[key])
         return default
 
     def set(self, key, value):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             store[self.encode_key(key)] = self.encode_value(value)
         return True
 
     def pop(self, key, default=None):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             return self.decode_value(store.pop(self.encode_key(key), default))
         return default
 
     def popitem(self):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             return self.encode_value(store.popitem())
 
     def update(self, d):
-        with self.manager.open(self.store_path, **self.open_params) as store:
+        with self.context as store:
             store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
         return self
 
@@ -322,3 +320,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .mongodb import MongoDBStore
+
+with contextlib.suppress(ImportError):
+    from .safetensors import SafetensorsStore

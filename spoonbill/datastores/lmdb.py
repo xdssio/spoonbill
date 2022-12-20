@@ -34,11 +34,15 @@ class LmdbStore(ContextStore):
     manager = CloudpickleEncoder
 
     def __init__(self, path: str, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
-                 strict=False):
+                 strict=True):
         self.store_path = path
         self.strict = strict
         self.as_string = False
         self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
+
+    @property
+    def context(self):
+        return CloudpickleEncoder.open(self.store_path, **self.open_params)
 
     def _flush(self):
         count = len(self)

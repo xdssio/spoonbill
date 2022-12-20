@@ -77,6 +77,7 @@ def test_redis_strict():
         store['1'] = {'1': 1}
 
 
+@pytest.mark.skip("Experimental")
 def test_redis_save_load():
     tmpdir = TemporaryDirectory()
     store = RedisStore.open('redis://localhost:6379/1', strict=True)

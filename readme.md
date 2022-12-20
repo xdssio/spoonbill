@@ -26,27 +26,25 @@ pip install spoonbill
 
 * For scan operations, you need to use a keys as strings.
 
-| Operation                    | InMemoryDict | BucketDict                 | RedisDict                                  | LmdbDict                                            | PysosDict                                   | ShelveDict                                              | DynamoDBDict                                     | FireStoreDict                                               | CosmosDB                                                                                               | MongoDbDict                             |
-|------------------------------|--------------|----------------------------|--------------------------------------------|-----------------------------------------------------|---------------------------------------------|---------------------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| backend                      | python dict  | S3/GS/AZ buckets           | [Redis](https://github.com/redis/redis-py) | [Lmdb](https://github.com/Dobatymo/lmdb-python-dbm) | [Pysos](https://github.com/dagnelies/pysos) | [Shelve](https://docs.python.org/3/library/shelve.html) | [AWS DynamoDB](https://aws.amazon.com/dynamodb/) | [GCP Firestore](https://firebase.google.com/docs/firestore) | [Azure Cosmos DB](https://www.google.com/search?client=safari&rls=en&q=Azure+Cosmos&ie=UTF-8&oe=UTF-8) | [MongoDB](https://www.mongodb.com/home) |
-| set                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | 
-| get                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| pop                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| delete                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| len                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| eq                           | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| keys                         | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| values                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| items                        | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| iter                         | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| contains                     | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| update                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| get_batch                    | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| set_batch                    | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| persistence                  | X            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       |
-| save/load                    | √            | Auto                       | Save (experimental)                        | √                                                   | √                                           | √                                                       | Serverless                                       | Serverless                                                  | Serverless                                                                                             | √ (strict)                              |
-| key type (Not strict/strict) | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | String                                           | Any/String                                                  | String                                                                                                 | String                                  |
-| value_type                   | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | Jsonable                                         | Any                                                         | Any                                                                                                    | Any/Dict[str,Any]                       |
+| Operation                    | InMemoryDict | BucketDict                 | RedisDict                                  | LmdbDict                                            | PysosDict                                   | ShelveDict                                              | DynamoDBDict                                     | FireStoreDict                                               | CosmosDB                                                                                               | MongoDbDict                             | Safetensors                                               |
+|------------------------------|--------------|----------------------------|--------------------------------------------|-----------------------------------------------------|---------------------------------------------|---------------------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-----------------------------------------|-----------------------------------------------------------|
+| backend                      | python dict  | S3/GS/AZ buckets           | [Redis](https://github.com/redis/redis-py) | [Lmdb](https://github.com/Dobatymo/lmdb-python-dbm) | [Pysos](https://github.com/dagnelies/pysos) | [Shelve](https://docs.python.org/3/library/shelve.html) | [AWS DynamoDB](https://aws.amazon.com/dynamodb/) | [GCP Firestore](https://firebase.google.com/docs/firestore) | [Azure Cosmos DB](https://www.google.com/search?client=safari&rls=en&q=Azure+Cosmos&ie=UTF-8&oe=UTF-8) | [MongoDB](https://www.mongodb.com/home) | [safetensors](https://github.com/huggingface/safetensors) |
+| set                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | X                                                         | 
+| get                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| pop                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | X                                                         |
+| delete                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | X                                                         |
+| len                          | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| eq                           | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | X                                                         |
+| keys                         | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| values                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| items                        | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| iter                         | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| contains                     | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| update                       | √            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | X                                                         |
+| persistence                  | X            | √                          | √                                          | √                                                   | √                                           | √                                                       | √                                                | √                                                           | √                                                                                                      | √                                       | √                                                         |
+| save/load                    | √            | Auto                       | Save (experimental)                        | √                                                   | √                                           | √                                                       | Serverless                                       | Serverless                                                  | Serverless                                                                                             | √ (strict)                              | √                                                         |
+| key type (Not strict/strict) | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | String                                           | Any/String                                                  | String                                                                                                 | String                                  | String                                                    |
+| value_type                   | Any          | Any(local) / String(cloud) | Any/String                                 | Any                                                 | Any                                         | Any                                                     | Jsonable                                         | Any                                                         | Any                                                                                                    | Any/Dict[str,Any]                       | Tensors                                                   |
 
 ## Usage
 
@@ -83,7 +81,7 @@ store.load('path')
 
 ```
 
-When using `strict=True` we can use some of the advanced features of the backend. specifically for searches.
+When using `strict=True` we can use some advanced features of the backend. specifically for searches.
 
 ```python
 from spoonbill.datastores import InMemoryStore
@@ -94,6 +92,24 @@ store.values(keys=['key1', 'key2'])  # retrieve a batch of values efficiently
 store.items(conditions={'a': '1+', 'b': 1}, limit=10)  # filter based on match conditions
 
 ```
+
+## How to choose a backend?
+
+For fastest performance, use the InMemoryStore. It is a simple dict that is not persisted to disk. If you need local
+persistence, use Lmdb store or ShelveStore. They are both fast and efficient.
+
+If speed is not important, but you want cheap persistence in the cloud, use BucketStore.
+
+If you are using it to load tensors for embedding or deep learning weights, use SafetensorsStore
+
+If you need persistence in the cloud with realtime search, use one of the Providers key-values store:
+
+* CosmosDB (Azure)
+* Firestore (GCP)
+* DynamoDB (AWS)
+* MongoDB (Wherever it is deployed)
+
+If you need very fast realtime, then the RedisStore is the best choice.
 
 ### InMemoryDict
 
@@ -130,9 +146,9 @@ For faster applications with cloud persistence, use InMemoryStore/LmdbStore and 
 
 Dictionaries which are persisted to disk.
 
-### LmdbStore
+### [LmdbStore](https://github.com/Dobatymo/lmdb-python-dbm)
 
-LmdbDict is a wrapper around the [lmdb-python-dbm](lmdb-python-dbm) library.    
+LmdbDict is a wrapper around the [lmdb](http://www.lmdb.tech/doc/) library.    
 It is a fast key-value with memory-mapped persistence.
 
 Requirements:   
@@ -144,9 +160,8 @@ from spoonbill.datastores import LmdbStore
 store = LmdbStore.open('tmp.db')
 ```
 
-### PysosStore
+### [PysosStore](https://github.com/dagnelies/pysos)
 
-A wrapper around the [pysos](https://github.com/dagnelies/pysos) library.      
 This is ideal for lists or dictionaries which either need persistence, are too big to fit in memory or both.
 
 Requirements:   
@@ -158,9 +173,28 @@ from spoonbill.datastores import PysosStore
 store = PysosStore.open('tmp.db')
 ```
 
-### Redis
+### [Safetensors](https://github.com/huggingface/safetensors)
 
-A wrapper around [redis-py](https://github.com/redis/redis-py) library.
+This is ideal whe you want to work with tensors from disc, but it is a frozen store - no set or update.
+
+Requirements:   
+```pip install safetensors```
+
+* if you use tensorflow, torch, numpy or flax, youll need to install them too... duh.
+
+```python
+from spoonbill.datastores import SafetensorsStore
+import numpy as np
+
+data = {'weight1': np.array([1, 2, 3]), 'weight2': np.array([4, 5, 6])}
+SafetensorsStore.export_safetensors(data, 'tmp.db', framework=SafetensorsStore.NUMPY)
+store = SafetensorsStore.open('tmp.db', framework=SafetensorsStore.NUMPY, device='cpu')
+
+store['weight1']  # returns a numpy array
+store['weight1'] = 1  # raises an error
+```
+
+### [Redis](https://github.com/redis/redis-py)
 
 * When strict=False any key-value can be used, otherwise only string keys and values can be used.
 * When using keys with patterns -> the pattern is passed to redis *keys* function, so the behaviour is what you would
@@ -185,9 +219,19 @@ assert store[1](1) == 2
 
 ## Serverless stores
 
-* Recommended to use with `strict=True` to enjoy all the benefits of backends.
 * Recommended to use values as dict values, as they are more efficient to scan.
     * Example: `store['key'] = {'a': 1, 'b': 2}`
+
+Recommended using with `strict=True` to enjoy all the benefits of backends including searches
+
+```python
+from spoonbill.datastores import MongoDBStore
+
+store = MongoDBStore()
+store.keys(pattern="*", limit=10)  # scan keys to a pattern
+store.values(keys=['key1', 'key2'])  # retrieve a batch of values efficiently 
+store.items(conditions={'a': '1+', 'b': 1}, limit=10)  # filter based on match conditions
+```
 
 ### [DynamoDB]((https://aws.amazon.com/dynamodb/))
 
@@ -269,5 +313,6 @@ from spoonbill.datastores import MongoDBStore
 store = MongoDBStore.open(uri='mongodb://localhost:27017/')
 ```
 
+### [MongoDB]((https://www.mongodb.com/home))
 
 
