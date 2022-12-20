@@ -1,7 +1,7 @@
 import pathlib
 import re
 import shutil
-from spoonbill.datastores import KeyValueStore
+from spoonbill.datastores import KeyValueStore, VALUE
 
 
 def is_cloud_url(path):
@@ -108,24 +108,28 @@ class BucketStore(KeyValueStore):
     def _to_key_value(self, key):
         return self.decode_key(key.name), self.decode_value(key.read_text())
 
-    def scan(self, pattern: str = None, limit: int = None):
+    def keys(self, pattern: str = None, limit: int = None):
         for key in self._iter_keys(pattern, limit):
             yield self.decode_key(key.name)
 
-    def keys(self, ids: list = None, limit: int = None):
-        if ids: ids = set(ids)
-        for key in self._iter(None, limit=limit):
-            key = self.decode_key(key.name)
-            if not ids or key in ids:
+    def items(self, conditions: dict = None, limit: int = None):
+        if conditions is not None and not hasattr(conditions, 'items'):
+            conditions = {VALUE: conditions}
+
+        def iterator():
+            for key in self._iter_keys(pattern=None, limit=limit):
                 yield key
 
-    def items(self, patterns: dict = None, limit: int = None):
-        for key, value in self._scan_match(self._iter_keys(patterns=None, limit=limit), patterns=patterns, limit=limit):
+        for key, value in self._scan_match(iterator(), conditions=conditions,
+                                           limit=limit):
             yield key, value
 
-    def values(self):
-        for key, value in self._scan_match(self._iter_keys(patterns=None, limit=limit), patterns=patterns, limit=limit):
-            yield value
+    def values(self, keys: list = None, limit: int = None):
+        if keys is None:
+            keys = self._iter_keys(limit=limit)
+        for key in keys:
+            yield self.decode_value(self._to_key(key).read_text())
+
 
     def __contains__(self, item):
         return self._to_key(item).is_file()
@@ -157,6 +161,6 @@ class BucketStore(KeyValueStore):
         return key, value
 
     def update(self, d):
-        for key, value in items:
-            self[key] = value
+        for key, value in d.items():
+            self._put_item(key, value)
         return self

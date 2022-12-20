@@ -72,19 +72,9 @@ class RedisStore(KeyValueStore, Strict):
     def set(self, key, value):
         return self._store.set(self.encode_key(key), self.encode_value(value))
 
-    def get_batch(self, keys, default=None):
-        pipeline = self.pipeline()
-        for key in keys:
-            pipeline.get(self.encode_key(key))
-        for value in pipeline.execute():
-            yield self.decode_value(value) if value is not None else default
 
-    def set_batch(self, keys, values):
-        pipeline = self.pipeline()
-        for key, value in zip(keys, values):
-            pipeline.set(self.encode_key(key), self.encode_value(value))
-        pipeline.execute()
-        return True
+
+
 
     def update(self, d):
         pipeline = self._store.pipeline()
@@ -113,15 +103,12 @@ class RedisStore(KeyValueStore, Strict):
                         continue
                     yield self.decode_key(key), self.decode_value(value)
 
-    def _items(self, pattern: str = None, *args, **kwargs):
-        if pattern:
-            if self.strict:
-                raise NotImplementedError("pattern is not supported in strict=False mode")
-            kwargs['pattern'] = pattern
+    def _items(self, *args, **kwargs):
         keys = self._store.keys(*args, **kwargs)
         if keys:
             values = self._store.mget(*keys)
-            return zip(keys, values)
+            for key, value in zip(keys, values):
+                yield self.decode_key(key), self.decode_value(value)
         return iter([])
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
@@ -132,21 +119,22 @@ class RedisStore(KeyValueStore, Strict):
                 break
             yield self.decode_key(key)
 
-    def values(self, *args, **kwargs):
-        if 'patterns' in kwargs or 'pattern' in kwargs:
-            raise NotImplementedError("patterns are not supported for redis values")
-        for key, value in self._items(*args, **kwargs):
-            if value is None:
-                continue
-            yield self.decode_value(value)
+    def values(self, keys: str = None, limit: int = None, default=None, *args, **kwargs):
+        if keys:
+            pipeline = self.pipeline()
+            for key in keys:
+                pipeline.get(self.encode_key(key))
+            for value in pipeline.execute():
+                yield self.decode_value(value) if value is not None else default
+        else:
+            for key, value in self._items(*args, **kwargs):
+                if value is None:
+                    continue
+                yield self.decode_value(value)
 
-    def items(self, pattern: str = None, limit: int = None, *args, **kwargs):
-        for i, (key, value) in enumerate(self._items(pattern, *args, **kwargs)):
-            if value is None:
-                continue
-            if i == limit:
-                break
-            yield self.decode_key(key), self.decode_value(value)
+    def items(self, conditions: str = None, limit: int = None, *args, **kwargs):
+        for key, value in self._scan_match(self._items(*args, **kwargs), conditions=conditions, limit=limit):
+            yield key, value
 
     def _flush(self):
         count = len(self)

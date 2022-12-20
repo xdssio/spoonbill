@@ -47,9 +47,9 @@ def test_redis_dict():
     assert store == {'test': 'test2', 'another': 'another2', 1: 1}
 
     store._flush()
-    store.set_batch(range(10), range(10))
+    store.update({i: i for i in range(10)})
     assert len(store) == 10
-    assert list(store.get_batch(range(10))) == list(range(10))
+    assert list(store.values(range(10))) == list(range(10))
     assert len([1 for _ in store]) == 10  # test iterator
 
     store['function'] = lambda x: x

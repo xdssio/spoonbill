@@ -1,37 +1,55 @@
 import os
 import contextlib
-from spoonbill.datastores import KeyValueStore, VALUE, KEY
+from spoonbill.datastores import KeyValueStore, VALUE
 from azure.cosmos import CosmosClient, PartitionKey
 import azure.cosmos.exceptions
+import json
+
+ID = 'id'
+KEY = '_KEY_'
+
+# database = 'tmp'
+# partition_key = 'id'
+# client = CosmosClient(os.getenv('COSMOS_ENDPOINT'),os.getenv('COSMOS_KEY'))
+# partition_key_path = PartitionKey(path='/id')
+# database = client.create_database_if_not_exists(id='db')
+# container = database.create_container_if_not_exists(id='container', partition_key=partition_key_path, offer_throughput=400)
+# container.create_item({'id': 'item1', 'name': 'item1', 'description': 'item1 description'})
+# container.read_item('item1', partition_key='item1')
+# list(container.read_all_items())
+
+DEFAULT_PARTITION_KEY = '/id'
 
 
 class CosmosDBStore(KeyValueStore):
-    ID = 'id'
 
-    def __init__(self, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,
+    def __init__(self, database: str = 'db',
+                 container: str = 'container',
+                 endpoint: str = None,
+                 credential: str = None,
+                 partition_key=DEFAULT_PARTITION_KEY,
                  strict=True):
         self.client = CosmosClient(url=endpoint or os.getenv('COSMOS_ENDPOINT'),
                                    credential=credential or os.getenv('COSMOS_KEY'))
         self.database_name = database
-        self.partition_key_path = PartitionKey(path="/key")
         self.database = self.client.create_database_if_not_exists(id=self.database_name)
         self.container = self.database.create_container_if_not_exists(
-            id=container, partition_key=self.partition_key_path, offer_throughput=400)
+            id=container, partition_key=PartitionKey(path=partition_key), offer_throughput=400)
         self.strict = strict
         self.as_string = True
 
     @classmethod
     def open(cls, database: str = 'db', container: str = 'container', endpoint: str = None, credential: str = None,
-             strict=True):
+             partition_key=DEFAULT_PARTITION_KEY, strict=True):
         return CosmosDBStore(database=database, container=container, endpoint=endpoint, credential=credential,
+                             partition_key=partition_key,
                              strict=strict)
 
     def _list_containers(self):
         return [container['id'] for container in self.database.list_containers()]
 
     def _to_item(self, key, value):
-        key = self.encode_key(key)
-        item = {KEY: key, CosmosDBStore.ID: key}
+        item = {ID: self.encode_key(key)}
         if not self.strict or not isinstance(value, dict):
             item[VALUE] = self.encode_value(value)
         else:
@@ -40,12 +58,11 @@ class CosmosDBStore(KeyValueStore):
 
     def _to_key_value(self, item):
         if item is not None:
-            key = item.pop(KEY)
+            key = self.decode_value(item.pop(ID))
             if VALUE in item:
                 value = self.decode_value(item[VALUE])
             else:
                 value = {k: v for k, v in item.items() if not str(k).startswith('_')}
-                value.pop(CosmosDBStore.ID, None)
             key = self.decode_key(key)
             return key, value
 
@@ -94,10 +111,10 @@ class CosmosDBStore(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter_items(self, patterns: dict = None, limit: int = None):
-        patterns = patterns or {}
+    def _iter_items(self, conditions: dict = None, limit: int = None):
+        conditions = conditions or {}
         wheres = []
-        for feature, pattern in patterns.items():
+        for feature, pattern in conditions.items():
             if isinstance(pattern, str):
                 wheres.append('c.{} LIKE "%{}%"'.format(feature, pattern))
             else:
@@ -125,34 +142,37 @@ class CosmosDBStore(KeyValueStore):
         ):
             yield self._to_key_value(item)
 
-    def keys(self, ids: list = None, limit: int = None):
-        where = ' WHERE ' + 'c.id IN ({})'.format(','.join(ids)) if ids else None
-        for item in self._iter_keys(where=where, limit=limit):
-            yield item[0]
-
-    def items(self, patterns: dict = None, limit: int = None):
-        if patterns is not None and not hasattr(patterns, 'items'):
-            patterns = {VALUE: patterns}
-        for item in self._iter_items(patterns=patterns, limit=limit):
-            yield item
-
-    def values(self, patterns: dict = None, limit: int = None):
-        if patterns is not None and not hasattr(patterns, 'items'):
-            patterns = {KEY: patterns}
-        for item in self._iter_items(patterns=patterns, limit=limit):
-            yield item[1]
-
-    def scan(self, pattern: str = None, limit: int = None):
+    def keys(self, pattern: str = None, limit: int = None):
         where = ' WHERE ' + 'c.id LIKE "%{}%"'.format(pattern) if pattern else None
         for item in self._iter_keys(where=where, limit=limit):
             yield item[0]
 
-    def _update(self, items):
-        for key, value in items:
-            self[key] = value
+    def items(self, conditions: dict = None, limit: int = None):
+        if conditions is not None and not hasattr(conditions, 'items'):
+            conditions = {VALUE: conditions}
+        for item in self._iter_items(conditions=conditions, limit=limit):
+            yield item
+
+    def _scan_by_keys(self, keys: list, default=None):
+        order = {i: key for i, key in enumerate(keys)}
+        group = json.dumps(keys)
+        group = '(' + group[1:-1] + ')'
+        where = ' WHERE ' + 'c.id IN {}'.format(group) if group else None
+        items = {item[0]: item[1] for item in self._iter_keys(where=where)}
+        for i in range(len(order)):
+            yield items.get(order.get(i), default)
+
+    def values(self, keys: list = None, limit: int = None, default=None):
+        if keys:
+            for value in self._scan_by_keys(keys=keys, default=default):
+                yield value
+        else:
+            for item in self._iter_items(limit=limit):
+                yield item[1]
 
     def update(self, d):
-        self._update(d.items())
+        for key, value in d.items():
+            self[key] = value
         return self
 
     def _flush(self):
@@ -170,7 +190,7 @@ class CosmosDBStore(KeyValueStore):
         if len(self) == 0:
             raise KeyError('popitem(): dictionary is empty')
         item = next(self._iter_items(limit=1))
-        self._delete_item(item.get(KEY))
+        self._delete_item(item.get(ID))
         _, value = self._to_key_value(item)
         return value
 

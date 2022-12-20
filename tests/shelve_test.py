@@ -32,9 +32,9 @@ def test_shelve():
     assert store == {'test': 'test2', 'another': 'another2'}
     store._flush()
     N = 1000
-    store.set_batch(range(N), range(N))
+    store.update({i: i for i in range(N)})
     assert len(store) == N
-    assert set(store.get_batch(range(10))) == set(range(10))
+    assert set(store.values(range(10))) == set(range(10))
     assert len([1 for _ in store]) == N  # test iterator
 
     store['function'] = lambda x: x + 1
@@ -69,9 +69,9 @@ def test_shelve_strict():
     assert store == {'test': 'test2', 'another': 'another2'}
     store._flush()
     N = 1000
-    store.set_batch(range(N), range(N))
+    store.update({i: i for i in range(N)})
     assert len(store) == N
-    assert set(store.get_batch(range(10))) == set(range(10))
+    assert set(store.values(range(10))) == set(range(10))
     assert len([1 for _ in store]) == N  # test iterator
 
     with pytest.raises((pickle.PickleError, AttributeError)):
@@ -97,8 +97,7 @@ def test_shelve_search():
     store = ShelveStore.open(path)
     store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
     store.update({1: 10, 2: 20})
-    assert list(store.items(patterns={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
+    assert list(store.items(conditions={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
     assert set(store.keys(pattern='1+')) == {1, '13', '10', '14', '1', '11', '16', '17', '12', '15', '18', '19'}
     assert list(store.keys(pattern=1)) == [1]
-    assert list(store.values(patterns=10)) == [10]
-    assert list(store.values(patterns={'b': '2+'})) == [{'a': 20, 'b': '20'}, {'a': 2, 'b': '2'}, {'a': 21, 'b': '21'}]
+    assert list(store.values(keys=['10', '13'])) == [{'a': 10, 'b': '10'}, {'a': 13, 'b': '13'}]

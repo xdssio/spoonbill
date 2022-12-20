@@ -1,5 +1,7 @@
 import typing
 import logging
+import warnings
+
 from spoonbill.datastores import KeyValueStore, KEY, VALUE
 import boto3
 import decimal
@@ -14,20 +16,23 @@ DYNAMODB = 'dynamodb'
 
 class DynamoDBStore(KeyValueStore):
 
-    def __init__(self, table_name: str, key_type: str = 'S', **kwargs):
+    def __init__(self, table_name: str, key_type: str = 'S', key=KEY, **kwargs):
         self.table_name = table_name
         self.client = boto3.client(DYNAMODB, **kwargs)
         self.table = boto3.resource(DYNAMODB, **kwargs).Table(self.table_name)
         self.strict = True
         self.key_type = key_type
+        self.key = key
         self.create_table()
 
     @classmethod
-    def open(self, table_name: str, key_type: str = None, **kwargs):
+    def open(self, table_name: str, key_type: str = None, strict=True, **kwargs):
+        if not strict:
+            warnings.warn("DynamoDBStore is always strict")
         client = boto3.client('dynamodb', **kwargs)
         if key_type is None:
             try:
-                description = client.describe_table(TableName='asf')
+                description = client.describe_table(TableName=table_name)
                 key_type = description['Table']['AttributeDefinitions'][0]['AttributeType']
             except:
                 key_type = 'S'
@@ -44,9 +49,9 @@ class DynamoDBStore(KeyValueStore):
         table_name = table_name or self.table_name
 
         if not table_name in self._list_tables():
-            key_schema = key_schema or kwargs.pop('AttributeDefinitions', [{'AttributeName': KEY, 'KeyType': 'HASH'}])
+            key_schema = key_schema or kwargs.pop('AttributeDefinitions', [{'AttributeName': self.key, 'KeyType': 'HASH'}])
             attribute_definitions = attribute_definitions or kwargs.pop('AttributeDefinitions', [
-                {'AttributeName': KEY, 'AttributeType': self.key_type}])
+                {'AttributeName': self.key, 'AttributeType': self.key_type}])
             billing_mode = billing_mode or kwargs.pop('BillingMode', 'PAY_PER_REQUEST')
             return self.client.create_table(TableName=table_name, KeySchema=key_schema,
                                             AttributeDefinitions=attribute_definitions,
@@ -95,8 +100,9 @@ class DynamoDBStore(KeyValueStore):
         return {KEY: key, VALUE: value}
 
     def _to_key_value(self, item):
+        if isinstance(item, tuple):
+            return item
         key = item.pop(KEY)
-
         return key, self._process_item(item)
 
     def _get_item(self, key: str):
@@ -160,7 +166,13 @@ class DynamoDBStore(KeyValueStore):
                 err.response['Error']['Code'], err.response['Error']['Message'])
             raise
 
-    def _simple_scan(self, params: dict, limit: int = None):
+    def _table_scan(self, params: dict, limit: int = None):
+        """
+        Iterate all items in the table
+        :param params:
+        :param limit:
+        :return:
+        """
         if limit:
             params['Limit'] = limit
         try:
@@ -185,31 +197,34 @@ class DynamoDBStore(KeyValueStore):
         responses = self.client.batch_get_item(
             RequestItems={self.table_name: {'Keys': [self._to_dynamodb_key(key) for key in keys]}})
         for item in responses['Responses'][self.table_name]:
-            yield self._to_key_value(from_dynamodb_json(item))[1]
+            yield self._to_key_value(from_dynamodb_json(item))
 
-    def keys(self, ids: list = None, limit: int = None):
-        if ids:
-            for key in self.scan_by_key(ids, limit):
-                yield key
-        else:
-            params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
-            for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=None, limit=limit):
-                yield item[0]
-
-    def values(self, limit: int = None):
-        params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
-        for item in self._simple_scan(params, limit):
-            yield item[1]
-
-    def items(self, pattern: str = None, limit: int = None):
-        params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
-        for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
-            yield item
-
-    def scan(self, pattern: str = None, limit: int = None):
+    def keys(self, pattern: str = None, limit: int = None):
+        is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
         params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
-        for item in self._scan_match(self._simple_scan(params, limit=limit), pattern=pattern, limit=limit):
-            yield item[0]
+        i = 0
+        for key, value in self._table_scan(params):
+            if i == limit:
+                break
+            if is_valid(key):
+                i += 1
+                yield key
+
+    def values(self, keys: list = None, limit: int = None, default=None):
+        if keys:
+            for item in self._scan_by_keys(keys):
+                if item:
+                    yield item[1]
+                else:
+                    yield default
+        else:
+            for item in self.items(limit=limit):
+                yield item[1]
+
+    def items(self, conditions: dict = None, limit: int = None):
+        params = {'TableName': self.table_name, 'Select': 'ALL_ATTRIBUTES'}
+        for item in self._scan_match(self._table_scan(params, limit=limit), conditions=conditions, limit=None):
+            yield item
 
     def _flush(self, delete_table: bool = False):
         count = len(self)
@@ -243,8 +258,6 @@ class DynamoDBStore(KeyValueStore):
     def _to_dynamodb_key(self, key):
         return {KEY: {self.key_type: self._to_key_type(key)}}
 
-
-
     def _insert_items(self, items):
         count = 0
         with self.table.batch_writer() as batch:
@@ -261,4 +274,3 @@ class DynamoDBStore(KeyValueStore):
        """
         self._insert_items(d.items())
         return self
-

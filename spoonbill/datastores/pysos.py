@@ -23,7 +23,7 @@ class PysosStore(KeyValueStore):
     the data is stored in a plain text format
     """
 
-    def __init__(self, store: pysos.Dict = None, store_path: str = None, strict: bool = False):
+    def __init__(self, store: pysos.Dict = None, store_path: str = None, strict: bool = True):
         self._store = store or {}
         self.store_path = store_path
         self.strict = strict
@@ -42,7 +42,7 @@ class PysosStore(KeyValueStore):
     def update(self, d):
         for k, v in d.items():
             self[k] = v
-        return True
+        return self
 
     def pop(self, key, default=None):
         key = self.encode_key(key)
@@ -53,6 +53,5 @@ class PysosStore(KeyValueStore):
         return ret
 
     @classmethod
-    def open(cls, path: str):
-        return PysosStore(pysos.Dict(path), path)
-
+    def open(cls, path: str, strict: bool = True):
+        return PysosStore(pysos.Dict(path), path, strict=strict)

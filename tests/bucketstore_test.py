@@ -3,9 +3,9 @@ from spoonbill.datastores import BucketStore
 import pytest
 
 
-def test_dict():
+def test_bucket_dict():
     tmpdir = TemporaryDirectory()
-    self = store = BucketStore.open(tmpdir.name)
+    store = BucketStore.open(tmpdir.name)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -18,7 +18,7 @@ def test_dict():
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(pattern='test')) == ['test']
-    assert list(store.items(patterns='test')) == [('test', 'test')]
+    assert list(store.items(conditions='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1
@@ -29,9 +29,9 @@ def test_dict():
 
     store._flush()
     N = 1000
-    store.set_batch(range(N), range(N))
+    store.update({i: i for i in range(N)})
     assert len(store) == N
-    assert list(store.get_batch(range(10))) == list(range(10))
+    assert list(store.values(range(10))) == list(range(10))
     assert len([1 for _ in store]) == N  # test iterator
 
 
@@ -51,7 +51,7 @@ def buclketdict_s3():
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(patterns='test')) == ['test']
-    assert list(store.items(patterns='test')) == [('test', 'test')]
+    assert list(store.items(conditions='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1

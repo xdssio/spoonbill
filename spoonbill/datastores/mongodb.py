@@ -1,31 +1,34 @@
 import re
 from spoonbill.datastores import KeyValueStore, VALUE, KEY
-from pymongo import MongoClient
 import pymongo
 import bson
-import cloudpickle
 
 ID = '_id'
 
 
 class MongoDBStore(KeyValueStore):
 
-    def __init__(self, uri: str = None, database: str = 'db', collection: str = 'collection', strict=True):
+    def __init__(self, uri: str = None,
+                 database: str = 'db',
+                 collection: str = 'collection',
+                 index=KEY,
+                 strict=True):
 
-        self.client = MongoClient(uri) if uri else MongoClient()
+        self.client = pymongo.MongoClient(uri) if uri else pymongo.MongoClient()
         self.database = self.client[database]
         self.collection = None
         self.strict = strict
         self.as_string = False
+        self.index = index
         self._create_collections(collection)
 
     def _create_collections(self, collection):
         self.collection = self.database[collection]
-        self.collection.create_index('key', unique=True)
+        self.collection.create_index(self.index, unique=True)
 
     @classmethod
-    def open(cls, uri: str = None, database: str = 'db', collection: str = 'collection', strict=True):
-        return MongoDBStore(uri=uri, database=database, collection=collection, strict=strict)
+    def open(cls, uri: str = None, database: str = 'db', collection: str = 'collection', index=KEY, strict=True):
+        return MongoDBStore(uri=uri, database=database, collection=collection, index=index, strict=strict)
 
     def _list_collections(self):
         return self.database.list_collection_names()
@@ -37,14 +40,14 @@ class MongoDBStore(KeyValueStore):
 
     def _to_item(self, key, value):
         key, value = self.encode_key(key), self._to_item_value(value)
-        item = {KEY: key, ID: key}
+        item = {self.index: key, ID: key}
         item.update(value)
         return item
 
     def _to_key_value(self, item):
         if item is None:
             return None
-        key = self.decode_key(item.pop(KEY))
+        key = self.decode_key(item.pop(self.index))
         _ = item.pop(ID, None)
         value = item.get(VALUE) if isinstance(item, dict) and VALUE in item else item
         value = self.decode_value(value)
@@ -91,59 +94,49 @@ class MongoDBStore(KeyValueStore):
     def set(self, key, value):
         self._put_item(key, value)
 
-    def _iter(self, patterns: dict = None, limit: int = None):
+    def _iter(self, conditions: dict = None, limit: int = None):
         params = {}
-        patterns = patterns or {}
-        for feature, pattern in patterns.items():
+        if conditions is not None and not hasattr(conditions, 'items'):
+            conditions = {VALUE: conditions}
+        conditions = conditions or {}
+        for feature, pattern in conditions.items():
             if isinstance(pattern, str):
                 pattern = re.compile(pattern, re.IGNORECASE)
             params[feature] = pattern
         return self.collection.find(**params).limit(limit) if limit else self.collection.find(params)
 
     def scan(self, pattern: str = None, limit: int = None):
-        pattern = {KEY: pattern} if pattern else None
-        for item in self._iter(patterns=pattern, limit=limit):
+        pattern = {self.index: pattern} if pattern else None
+        for item in self._iter(conditions=pattern, limit=limit):
             key, _ = self._to_key_value(item)
             yield key
 
-    def keys(self, ids: str = None, limit: int = None):
-        params = {ID: {'$in': [self.encode_key(key) for key in ids]}} if ids else {}
-        for item in self.collection.find(**params):
-            key, value = self._to_key_value(item)
-            yield value
+    def keys(self, pattern: str = None, limit: int = None):
+        pattern = {self.index: pattern} if pattern else None
+        for item in self._iter(conditions=pattern, limit=limit):
+            key, _ = self._to_key_value(item)
+            yield key
 
-    def items(self, patterns: dict = None, limit: int = None):
-        for item in self._iter(patterns=patterns, limit=limit):
+    def items(self, conditions: dict = None, limit: int = None):
+        for item in self._iter(conditions=conditions, limit=limit):
             key, value = self._to_key_value(item)
             yield key, value
 
-    def values(self, patterns: dict = None, limit: int = None):
-        for item in self._iter(patterns=patterns, limit=limit):
-            _, value = self._to_key_value(item)
+    def values(self, keys: dict = None, limit: int = None):
+        params = {ID: {'$in': [self.encode_key(key) for key in keys]}} if keys else {}
+        for item in self.collection.find(params):
+            key, value = self._to_key_value(item)
             yield value
 
-    def _update(self, items):
+    def update(self, d):
         operations = []
-        for key, value in items:
+        for key, value in d.items():
             item = self._to_item(key, value)
             operations.append(
                 pymongo.ReplaceOne(filter={ID: item.pop(ID)},
                                    replacement=item, upsert=True))
         self.collection.bulk_write(operations)
         return self
-
-    def update(self, d):
-        self._update(d.items())
-        return self
-
-    def get_batch(self, keys, default=None):
-        encoded_keys = [self.encode_key(key) for key in keys]
-        for item in self.collection.find({ID: {'$in': encoded_keys}}):
-            key, value = self._to_key_value(item)
-            yield value
-
-    def set_batch(self, keys, values):
-        self._update(zip(keys, values))
 
     def _flush(self):
         name = self.collection.name

@@ -2,8 +2,7 @@ from spoonbill.datastores import DynamoDBStore
 import pytest
 
 
-@pytest.mark.skip("Run this test manually")
-def test_dynamodb():
+def test_dynamodb_strict():
     store = DynamoDBStore.open('tmp')
     store._flush(delete_table=False)
 
@@ -21,8 +20,8 @@ def test_dynamodb():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(patterns='test')) == ['test']
-    assert list(store.items(patterns='test')) == [('test', 'test')]
+    assert list(store.keys(pattern='test')) == ['test']
+    assert list(store.items(conditions='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
     assert len(store) == 1
@@ -31,20 +30,16 @@ def test_dynamodb():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
 
-    store.set_batch([str(i) for i in range(10)], range(10))
+    store.update({str(i): i for i in range(10)})
     assert len(store) == 12
-    assert set(store.get_batch([i for i in range(10)])) == set(range(10))
+    assert set(store.values([i for i in range(10)])) == set(range(10))
     assert len([1 for _ in store]) == 12  # test iterator
 
-# def test_dynamodb_scan():
-#     self = store = DynamoDBStore.open('tmp',stict=False)
-#     store._flush(delete_table=False)
-#     store.update({str(i): {'a': i, 'b':str(i)} for i in range(20)})
-#     store.scan('a', 10, 10)
-#     self.client.scan(TableName=self.table_name, ExclusiveStartKey=)
-#     stmt = f"SELECT * FROM {self.table_name} WHERE a BETWEEN 10 AND 20"
-#     [from_dynamodb_json(item) for item in self.client.execute_statement(Statement=stmt)['Items']]
-#     from cerealbox.dynamo import from_dynamodb_json
-#     import boto3
-#
-#     self.table.query(KeyConditionExpression=Key('a').between(10, 20))
+
+def test_dynamodb_search():
+    store = DynamoDBStore.open('tmp', strict=True)
+    store._flush(delete_table=False)
+    store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
+    assert list(store.items(conditions={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
+    assert set(store.keys(pattern='1+')) == {'13', '10', '14', '1', '11', '16', '17', '12', '15', '18', '19'}
+    assert list(store.values(keys=['10', '13'])) == [{'a': 13, 'b': '13'}, {'a': 10, 'b': '10'}]

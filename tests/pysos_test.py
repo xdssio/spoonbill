@@ -2,10 +2,10 @@ from spoonbill.datastores import PysosStore
 from tempfile import TemporaryDirectory
 
 
-def test_pysos():
+def test_pysos_strict():
     tmpdir = TemporaryDirectory()
     path = tmpdir.name + '/tmp.db'
-    self = store = PysosStore.open(path)
+    store = PysosStore.open(path)
     store._flush()
     assert len(store) == 0
     store['test'] = 'test'
@@ -28,11 +28,16 @@ def test_pysos():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
     store._flush()
-    store.set_batch(range(10), range(10))
+    store.update({i: i for i in range(10)})
     assert len(store) == 10
-    assert list(store.get_batch(range(10))) == list(range(10))
+    assert list(store.values(range(10))) == list(range(10))
     assert len([1 for _ in store]) == 10  # test iterator
 
+
+def test_pysos_non_strict():
+    tmpdir = TemporaryDirectory()
+    path = tmpdir.name + '/tmp.db'
+    store = PysosStore.open(path, strict=False)
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2
 
@@ -49,14 +54,14 @@ def test_shelve_save_load():
     store = PysosStore(local_path).load(other_path)
     assert len(store) == 1
 
+
 def test_pysos_search():
     tmpdir = TemporaryDirectory()
     path = tmpdir.name + '/tmp.db'
-    store = PysosStore.open(path)
+    self = store = PysosStore.open(path)
     store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
     store.update({1: 10, 2: 20})
-    assert list(store.items(patterns={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
+    assert list(store.items(conditions={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
     assert set(store.keys(pattern='1+')) == {1, '13', '10', '14', '1', '11', '16', '17', '12', '15', '18', '19'}
     assert list(store.keys(pattern=1)) == [1]
-    assert list(store.values(patterns=10)) == [10]
-    assert list(store.values(patterns={'b': '2+'})) == [{'a': 2, 'b': '2'}, {'a': 20, 'b': '20'}, {'a': 21, 'b': '21'}]
+    assert list(store.values(keys=['10', '13'])) == [{'a': 10, 'b': '10'}, {'a': 13, 'b': '13'}]

@@ -54,8 +54,8 @@ class LmdbStore(ContextStore):
         return self.open_params.get("autogrow")
 
     @classmethod
-    def from_db(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
-                strict=False):
+    def open(cls, db_path, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,
+             strict=True):
         return LmdbStore(
             path=db_path,
             flag=flag,
@@ -82,5 +82,3 @@ class LmdbStore(ContextStore):
         for name, data in files.items():
             target_path.joinpath(name).write_bytes(data)
         return self
-
-    open = from_db

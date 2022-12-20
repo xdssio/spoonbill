@@ -16,7 +16,7 @@ class Firestore(KeyValueStore):
         self.as_string = True
 
     @classmethod
-    def open(self, collection_name: str, strict: bool = False, **kwargs):
+    def open(self, collection_name: str, strict: bool = True, **kwargs):
         return Firestore(collection_name=collection_name, strict=strict, **kwargs)
 
     def _flush(self):
@@ -35,14 +35,16 @@ class Firestore(KeyValueStore):
 
     def _to_key_value(self, item):
         if item is not None:
-            if VALUE in item:
-                item = item[VALUE]
-            return self.decode_value(item)
+            key = item.id
+            value = item.to_dict()
+            if VALUE in value:
+                value = value[VALUE]
+            return self.decode_key(key), self.decode_value(value)
 
     def _get_item(self, key: str):
         ref = self.collection.document(self.encode_key(key)).get()
         if ref.exists:
-            return self._to_key_value(ref.to_dict())
+            return self._to_key_value(ref)[1]
         return None
 
     def _put_item(self, key: str, value: str):
@@ -78,19 +80,22 @@ class Firestore(KeyValueStore):
     def set(self, key, value):
         return self._put_item(key, value)
 
-    def _scan_query(self, patterns: dict = None, limit: int = None):
-        if patterns is not None and not hasattr(patterns, 'items'):
-            patterns = {VALUE: patterns}
-        elif patterns is None:
-            patterns = {}
+    def _scan_query(self, conditions: dict = None, limit: int = None):
+        if conditions is not None and not hasattr(conditions, 'items'):
+            conditions = {VALUE: conditions}
+        elif conditions is None:
+            conditions = {}
         query = self.collection
-        for feature, value in patterns.items():
+        for feature, value in conditions.items():
             query = query.where(feature, '==', value)
         if limit is not None:
             query = query.limit(limit)
-        return query.stream()
+        for doc in query.stream():
+            yield self._to_key_value(doc)
 
-    def scan(self, pattern: str = None, limit: int = None):
+    def keys(self, pattern: str = None, limit: int = None):
+        if pattern is not None and self.strict is False:
+            raise ValueError('Cannot use pattern with strict=False mode')
         pattern = re.compile(pattern) if pattern else None
         for i, doc in enumerate(self.collection.stream()):
             if i == limit:
@@ -101,19 +106,19 @@ class Firestore(KeyValueStore):
             else:
                 yield self.decode_key(doc.id)
 
-    def keys(self, ids: str = None, limit: int = None):
-        if ids: ids = set(ids)
-        for key in self.scan(pattern=None, limit=limit):
-            if not ids or key in ids:
-                yield key
+    def values(self, keys: list = None, limit: int = None, default=None):
+        if keys:
+            for key in keys:
+                yield self.get(key, default)
+        else:
+            for item in self.items(limit=limit):
+                yield item[1]
 
-    def values(self, patterns: dict = None, limit: int = None):
-        for item in self._scan_query(patterns=patterns, limit=limit):
-            yield self._to_key_value(item.to_dict())
-
-    def items(self, patterns: dict = None, limit: int = None):
-        for item in self._scan_query(patterns=patterns, limit=limit):
-            yield self.decode_key(item.id), self._to_key_value(item.to_dict())
+    def items(self, conditions: dict = None, limit: int = None):
+        if conditions and self.strict is False:
+            raise ValueError('Cannot use conditions with strict=False mode')
+        for item in self._scan_query(conditions=conditions, limit=limit):
+            yield item
 
     def pop(self, key, default=None):
         value = self._get_item(key)
@@ -135,7 +140,7 @@ class Firestore(KeyValueStore):
        :return: Count of items inserted
        """
         batch = self.client.batch()
-        for i, (key, value) in enumerate(items):
+        for i, (key, value) in enumerate(d.items()):
             ref = self.collection.document(self.encode_key(key))
             batch.set(ref, self._to_item(value))
         batch.commit()

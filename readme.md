@@ -62,6 +62,7 @@ from spoonbill.datastores import InMemoryStore
 
 store = InMemoryStore()
 store["key"] = "value"
+store["key"] = {"feature": "value"}
 store["key"] == "value"
 del store['key']
 store.set("key", "value")
@@ -76,16 +77,22 @@ store.values()
 len(store)
 for key in store: pass  # iterate
 store.update({'key': 'value'})
-store.set_batch(['key'], ['value'])
-store.get_batch(['key'])
 store.save('path')
 store.load('path')
 
-# Search
-store.keys(pattern="*", limit=10)
-store.items(patterns={'a': '1+', 'b': 1}, limit=10)
-store.values(patterns={'a': '1+', 'b': 1}, limit=10)
-store.values(patterns='1', limit=10)  # works if store['a']='1' and such...
+
+```
+
+When using `strict=True` we can use some of the advanced features of the backend. specifically for searches.
+
+```python
+from spoonbill.datastores import InMemoryStore
+
+store = InMemoryStore()
+store.keys(pattern="*", limit=10)  # scan keys to a pattern
+store.values(keys=['key1', 'key2'])  # retrieve a batch of values efficiently 
+store.items(conditions={'a': '1+', 'b': 1}, limit=10)  # filter based on match conditions
+
 ```
 
 ### InMemoryDict
