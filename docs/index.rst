@@ -21,13 +21,23 @@ Features
 
 .. toctree::
    :maxdepth: 2
-   :caption: Quickstart:
+   :caption: Introduction:
 
-   tutorials/quickstart
-   tutorials/operations_map
-   tutorials/backends
-   tutorials/how_to_choose
+   markdowns/quickstart
 
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference:
+
+   markdowns/operations_map
+   markdowns/backends
+   markdowns/how_to_choose
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Use cases:
+
+   markdowns/use_cases
 
 .. toctree::
    :maxdepth: 2
