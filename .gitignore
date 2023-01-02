@@ -821,3 +821,4 @@ cython_debug/
 /.DS_Store
 .DS_Store
 /tmp
+/docs/run_livereload.py

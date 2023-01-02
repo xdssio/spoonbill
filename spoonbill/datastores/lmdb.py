@@ -31,6 +31,15 @@ class CloudpickleEncoder(lmdbm.Lmdb):
 
 
 class LmdbStore(ContextStore):
+    """
+    An LMDB key-value store based on [lmdb-python-dbm](https://github.com/Dobatymo/lmdb-python-dbm).
+
+    This is ideal for lists or datastores which either need persistence, are too big to fit in memory or both.
+    This is a Python DBM interface style wrapper around [LMDB](http://www.lmdb.tech/doc/) (Lightning Memory-Mapped Database).
+    It uses the existing lower level Python bindings [py-lmdb](https://lmdb.readthedocs.io/en/release/).
+    This is especially useful on Windows, where otherwise dbm.dumb is the default dbm database.
+
+    """
     manager = CloudpickleEncoder
 
     def __init__(self, path: str, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20, autogrow: bool = True,

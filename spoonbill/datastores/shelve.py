@@ -6,6 +6,9 @@ from spoonbill.datastores import ContextStore, Strict
 
 
 class ShelveStore(ContextStore, Strict):
+    """
+    A shelve key-value store based on [shelve](https://docs.python.org/3/library/shelve.html).
+    """
     manager = shelve
 
     def __init__(self, path, strict=True):

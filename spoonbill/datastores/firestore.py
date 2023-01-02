@@ -6,6 +6,9 @@ import re
 
 
 class Firestore(KeyValueStore):
+    """
+    Google cloud firestore key-value store
+    """
 
     def __init__(self, collection_name: str, strict: bool = True, **kwargs):
         self.collection_name = collection_name

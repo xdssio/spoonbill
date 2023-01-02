@@ -8,20 +8,13 @@ import json
 ID = 'id'
 KEY = '_KEY_'
 
-# database = 'tmp'
-# partition_key = 'id'
-# client = CosmosClient(os.getenv('COSMOS_ENDPOINT'),os.getenv('COSMOS_KEY'))
-# partition_key_path = PartitionKey(path='/id')
-# database = client.create_database_if_not_exists(id='db')
-# container = database.create_container_if_not_exists(id='container', partition_key=partition_key_path, offer_throughput=400)
-# container.create_item({'id': 'item1', 'name': 'item1', 'description': 'item1 description'})
-# container.read_item('item1', partition_key='item1')
-# list(container.read_all_items())
-
 DEFAULT_PARTITION_KEY = '/id'
 
 
 class CosmosDBStore(KeyValueStore):
+    """
+    Azure Cosmos DB Key-value store.
+    """
 
     def __init__(self, database: str = 'db',
                  container: str = 'container',
