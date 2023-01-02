@@ -13,8 +13,10 @@ Installation
 
 Features
 ~~~~~~~~~~
-1. A unified interface for all data stores.
-2. Scan, batch inserts and retrieval on (almost) all backends.
+1. A unified interface for all key-value data stores.
+2. A simple, intuitive API.
+3. A lightweight, fast, and flexible library.
+4. Extra features like Search, batch inserts and retrieval on (almost) all backends.
 
 
 .. toctree::
