@@ -33,6 +33,10 @@ store.load("path/to/file")
 **Searches** are supported when using `strict=True`.
 
 ```python
+from spoonbill.datastores import InMemoryStore
+
+store = InMemoryStore(strict=True)
+
 # scan keys to a pattern
 store.keys(pattern="*", limit=10)
 # retrieve a batch of values efficiently
