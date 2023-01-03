@@ -1,11 +1,11 @@
 from tempfile import TemporaryDirectory
-from spoonbill.datastores import BucketStore, InMemoryStore
+from spoonbill.datastores import FilesystemStore, InMemoryStore
 import pytest
 
 
 def test_bucket_dict():
     tmpdir = TemporaryDirectory()
-    store = BucketStore.open(tmpdir.name)
+    store = FilesystemStore.open(tmpdir.name)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -39,7 +39,7 @@ def test_bucket_dict():
 @pytest.mark.skip("Run manually")
 def buclketdict_s3():
     path = 's3://xdss-tmp/tmp.db/'
-    store = BucketStore.open(path)
+    store = FilesystemStore.open(path)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -68,7 +68,7 @@ def buclketdict_s3():
     assert store['function'](1) == 2
 
     path = 's3://xdss-tmp/tmp.db/'
-    store = BucketStore.open(path)
+    store = FilesystemStore.open(path)
     store._flush()
     store.update({i: i for i in range(11)})
     assert len(store) == 11

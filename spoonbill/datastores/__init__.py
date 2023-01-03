@@ -1,11 +1,8 @@
 import typing
 import contextlib
-import warnings
-import spoonbill.filesystem
 import cloudpickle
 import re
-import pathlib
-import fsspec
+from spoonbill.filesystem import FileSystem
 
 KEY = 'ID__'
 VALUE = 'VALUE__'
@@ -67,26 +64,13 @@ class Strict:
             return value
         return self.decode(value)
 
-    @staticmethod
-    def _is_cloud_url(path):
-        if hasattr(path, 'dirname'):
-            path = path.dirname
-        return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", path) is not None
-
-    @classmethod
-    def _get_path(cls, path):
-        if cls._is_cloud_url(path):
-            import cloudpathlib
-            return cloudpathlib.CloudPath(path)
-        return pathlib.Path(path)
-
     def save(self, path, **kwargs):
-        spoonbill.filesystem.save_bytes(path, cloudpickle.dumps(self), **kwargs)
+        FileSystem(path, **kwargs).write_bytes(cloudpickle.dumps(self))
         return True
 
     @classmethod
     def load(cls, path, **kwargs):
-        return cloudpickle.loads(spoonbill.filesystem.load_bytes(path, **kwargs))
+        return cloudpickle.loads(FileSystem(path).read_bytes())
 
 
 class KeyValueStore(Strict):
@@ -213,8 +197,7 @@ class KeyValueStore(Strict):
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
     def _from_directory(self, path):
-        fs = spoonbill.filesystem.get_filesystem_from_path(path)
-        mapper = fs.get_mapper(path)
+        mapper = FileSystem(path).get_mapper()
         self._flush()
 
         def decode_key(key):
@@ -229,10 +212,10 @@ class KeyValueStore(Strict):
 
     def reload(self, other):
         if isinstance(other, str):
-            fs = spoonbill.filesystem.get_filesystem_from_path(other)
-            if fs.isfile(other):
-                store = cloudpickle.loads(fs.read_bytes(other))
-            elif fs.isdir(other):
+            filesystem = FileSystem(other)
+            if filesystem.fs.isfile(other):
+                store = cloudpickle.loads(filesystem.read_bytes(other))
+            elif filesystem.fs.isdir(other):
                 return self._from_directory(other)
             else:
                 raise ValueError(f"Path {other} is not a file or directory")
@@ -325,12 +308,13 @@ class ContextStore(KeyValueStore, Strict):
         return self
 
     def _cp(self, source, target, **kwargs):
-        spoonbill.filesystem.save_bytes(target,
-                                        spoonbill.filesystem.load_bytes(source, **kwargs), **kwargs)
+
+        FileSystem(target).write_bytes(FileSystem(source, **kwargs).read_bytes())
+
+        # save_bytes(target, load_bytes(source, **kwargs), **kwargs)
         return True
 
     def save(self, path):
-
         self._cp(self.store_path, path)
         return path
 
@@ -358,7 +342,7 @@ with contextlib.suppress(ImportError):
     from .firestore import Firestore
 
 with contextlib.suppress(ImportError):
-    from .bucket import BucketStore
+    from .filesystem import FilesystemStore
 
 with contextlib.suppress(ImportError):
     from .cosmos import CosmosDBStore

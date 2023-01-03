@@ -1,21 +1,24 @@
 from spoonbill.datastores import KeyValueStore, InMemoryStore
-import spoonbill.filesystem
+from fsspec import AbstractFileSystem, get_filesystem_class
+from fsspec.implementations.cached import SimpleCacheFileSystem
+import typing
 import fsspec
+
 import cloudpickle
 
 
-class BucketStore(KeyValueStore):
+class FilesystemStore(KeyValueStore):
     """
-    A dictionary implemented as a bucket of files.
+    A dictionary implemented as map from file name as key to file contents as value.
     Pros: cloud persistent, cheap.
     Cons: slow.
     """
 
     def __init__(self, path, **kwargs):
         self._store = fsspec.get_mapper(path, **kwargs)
+        self.store_path = path
         self.strict = False
         self.as_string = False
-        self.store_path = path
 
     def encode_value(self, value):
         return cloudpickle.dumps(value)
@@ -30,8 +33,8 @@ class BucketStore(KeyValueStore):
         return key
 
     @classmethod
-    def open(self, path: str):
-        return BucketStore(path)
+    def open(self, path: str, **kwargs):
+        return FilesystemStore(path, **kwargs)
 
     def _flush(self):
         for key in self.keys():

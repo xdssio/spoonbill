@@ -87,16 +87,26 @@ store['weight1']  # returns a numpy array
 store['weight1'] = 1  # raises an error
 ```
 
-## BucketDict
+## FilesystemStore
 
-Requirements:   
-```pip install cloudpathlib```
+This dict is implemented as key-value files locally or on a cloud provider (S3, GS, AZ). It is **slow**, but good for as
+a cheap persisted key-value store. It is a wrapepr
+around [fsspec](https://filesystem-spec.readthedocs.io/en/latest/features.html#key-value-stores) key-value feature.
+Therefor it supports all the filesystems supported by fsspec (s3, gs, az, local, ftp, http, etc).
 
-This dict is implemented as key-value files locally or on a cloud provider (S3, GS, AZ). It is **very slow**, but good
-for as a cheap persisted key-value store.
+* It supports caching
+* It can be exported to a local directory or other clouds (s3, gs, az, etc)
 
 For faster applications with cloud persistence, you can use InMemoryStore/LmdbStore and save/load to the cloud after
 updates.
+
+```python
+from spoonbill.datastores import FilesystemStore
+
+# set strict to True to use redis with its default behaviour which turns keys and values to strings
+store = FilesystemStore.open("s3://bucket/path/to/store")
+store.save("local_dir_path")
+```
 
 ## [Redis](https://github.com/redis/redis-py)
 
