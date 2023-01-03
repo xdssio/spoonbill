@@ -217,7 +217,7 @@ from spoonbill.datastores import SafetensorsInMemoryStore, SafetensorsStore
 import numpy as np
 
 store = SafetensorsInMemoryStore(framework=SafetensorsStore.NUMPY)
-store['weight'] = np.array([1, 2, 3])  # backed by a InMemoryStore
+store['weight'] = np.array([1, 2, 3])  # backed by an InMemoryStore
 safetensors_store = store.export_safetensors("path")
 ```
 
