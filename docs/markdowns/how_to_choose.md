@@ -4,7 +4,7 @@ For fastest performance, use the InMemoryStore. It is a simple dict that is not 
 If you need local
 persistence, use Lmdb store or ShelveStore. They are both fast and efficient.
 
-If speed is not important, but you want cheap persistence in the cloud, use BucketStore.
+If speed is not important, but you want cheap persistence in the cloud, use FilesystemStore.
 
 If you are using it to load tensors for embedding or deep learning weights, use SafetensorsStore
 
@@ -15,4 +15,4 @@ If you need persistence in the cloud with realtime search, use one of the Provid
 * DynamoDB (AWS)
 * MongoDB (Wherever it is deployed)
 
-If you need very fast realtime, then the RedisStore is the best choice.
+If you need very fast realtime, then the RedisStore is the best choice.   

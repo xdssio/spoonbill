@@ -80,11 +80,8 @@ class KeyValueStore(Strict):
     _store = None
     strict: bool = False
 
-<<<<<<< HEAD
-    def __init__(self, store , strict: bool = False):
-=======
     def __init__(self, store, strict: bool = False):
->>>>>>> fsspec
+
         self._store = store
         self.strict = strict
 
@@ -204,8 +201,6 @@ class KeyValueStore(Strict):
         mapper = FileSystem(path).get_mapper()
         self._flush()
 
-<<<<<<< HEAD
-=======
         def decode_key(key):
             if key is not None:
                 if isinstance(key, str) and str(key)[:3] in ('b"\\', "b'\\"):
@@ -233,7 +228,6 @@ class KeyValueStore(Strict):
         return self
 
 
->>>>>>> fsspec
 class ContextStore(KeyValueStore, Strict):
     """
     The base class for context store - where the backend is used as a context manager.

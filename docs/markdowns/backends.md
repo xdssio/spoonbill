@@ -19,25 +19,13 @@ from collections import defaultdict, OrderedDict, Counter
 store = InMemoryStore(defaultdict)
 store = InMemoryStore(OrderedDict)
 store = InMemoryStore(Counter)
-``` 
+```
 
-<<<<<<< HEAD
-Dictionaries which are persisted to disk.
-
-=======
->>>>>>> fsspec
 ## [LmdbStore](https://github.com/Dobatymo/lmdb-python-dbm)
 
 An LMDB key-value store based on [lmdb-python-dbm](https://github.com/Dobatymo/lmdb-python-dbm). This is ideal for lists
 or datastores which either need persistence, are too big to fit in memory or both.   
 This is a Python DBM interface style wrapper around [LMDB](http://www.lmdb.tech/doc/) (Lightning Memory-Mapped Database)
-<<<<<<< HEAD
-.     
-It uses the existing lower level Python bindings [py-lmdb](https://lmdb.readthedocs.io/en/release/). This is especially
-=======
-. It uses the existing lower level Python bindings [py-lmdb](https://lmdb.readthedocs.io/en/release/). This is especially
->>>>>>> fsspec
-useful on Windows, where otherwise dbm.dumb is the default dbm database.
 
 Requirements:   
 ```pip install lmdbm```
@@ -52,8 +40,6 @@ store = LmdbStore.open('tmp.db')
 
 This is ideal for lists or dictionaries which either need persistence, are too big to fit in memory or both.
 
-<<<<<<< HEAD
-=======
 There are existing alternatives like shelve, which are very good too. There main difference with pysos is that:
 
 * only the index is kept in memory, not the values (so you can hold more data than what would fit in memory)
@@ -62,11 +48,9 @@ There are existing alternatives like shelve, which are very good too. There main
 * it's fast (much faster than shelve on windows, but slightly slower than native dbms on linux)
 * it's unbuffered by design: when the function returns, you are sure it has been written on disk
 * it's safe: even if the machine crashes in the middle of a big write, data will not be corrupted
-* it is platform independent, unlike shelve which relies on an underlying dbm implementation, which may vary from system to system
-the data is stored in a plain text format
+* it is platform independent, unlike shelve which relies on an underlying dbm implementation, which may vary from system
+  to system the data is stored in a plain text format
 
-
->>>>>>> fsspec
 Requirements:   
 ```pip install pysos```
 
@@ -109,15 +93,6 @@ store['weight1']  # returns a numpy array
 store['weight1'] = 1  # raises an error
 ```
 
-<<<<<<< HEAD
-## BucketDict
-
-Requirements:   
-```pip install cloudpathlib```
-
-This dict is implemented as key-value files locally or on a cloud provider (S3, GS, AZ). It is **very slow**, but good
-for as a cheap persisted key-value store.
-=======
 ## FilesystemStore
 
 This dict is implemented as key-value files locally or on a cloud provider (S3, GS, AZ). It is **slow**, but good for as
@@ -127,13 +102,10 @@ Therefor it supports all the filesystems supported by fsspec (s3, gs, az, local,
 
 * It supports caching
 * It can be exported to a local directory or other clouds (s3, gs, az, etc)
->>>>>>> fsspec
 
 For faster applications with cloud persistence, you can use InMemoryStore/LmdbStore and save/load to the cloud after
 updates.
 
-<<<<<<< HEAD
-=======
 ```python
 from spoonbill.datastores import FilesystemStore
 
@@ -142,13 +114,17 @@ store = FilesystemStore.open("s3://bucket/path/to/store")
 store.save("local_dir_path")
 ```
 
->>>>>>> fsspec
 ## [Redis](https://github.com/redis/redis-py)
+
+Probably the fastest solution for key-value stores not only in python, but in general. It is a great solution.
 
 * When strict=False any key-value can be used, otherwise only string keys and values can be used.
 * When using keys with patterns -> the pattern is passed to redis *keys* function, so the behaviour is what you would
   expect from redis.
 * Redis doesn't have any search for values.
+
+Requirements:   
+```pip install redis```
 
 ```python
 from spoonbill.datastores import RedisStore
@@ -190,7 +166,6 @@ store.items(conditions={'a': '1+', 'b': 1}, limit=10)  # filter based on match c
 * Save/load is only implemented for `strict=True`.
 
 Requirements:
-
 ```pip install pymongo```
 
 ```python
