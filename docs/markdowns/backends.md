@@ -3,10 +3,10 @@
 ## InMemoryStore
 
 This object is to have a common interface for all the key-value stores. It is great for testing and for the average use
-case, to have a common interface which includes the scan operation.
+case, to have a common interface which includes the search operation.
 
 * Save/load are implemented to save/load the whole dict to/from a file, locally or on the cloud
-  using [cloudpathlib](https://cloudpathlib.drivendata.org/stable/).
+  using [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=s3#other-known-implementations).
 
 ```python
 from spoonbill.datastores import InMemoryStore
@@ -26,6 +26,9 @@ store = InMemoryStore(Counter)
 An LMDB key-value store based on [lmdb-python-dbm](https://github.com/Dobatymo/lmdb-python-dbm). This is ideal for lists
 or datastores which either need persistence, are too big to fit in memory or both.   
 This is a Python DBM interface style wrapper around [LMDB](http://www.lmdb.tech/doc/) (Lightning Memory-Mapped Database)
+
+[Details](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database)
+
 
 Requirements:   
 ```pip install lmdbm```
@@ -95,7 +98,7 @@ store['weight1'] = 1  # raises an error
 
 ## FilesystemStore
 
-This dict is implemented as key-value files locally or on a cloud provider (S3, GS, AZ). It is **slow**, but good for as
+This dict is implemented as key-value files locally or on a cloud provider. It is **slow**, but good for as
 a cheap persisted key-value store. It is a wrapepr
 around [fsspec](https://filesystem-spec.readthedocs.io/en/latest/features.html#key-value-stores) key-value feature.
 Therefor it supports all the filesystems supported by fsspec (s3, gs, az, local, ftp, http, etc).

@@ -10,7 +10,6 @@ Example:
 
 ```python
 from spoonbill.datastores import DynamoDBStore, InMemoryStore
-
 import os
 
 environment = os.getenv("environment", "test")
@@ -87,8 +86,6 @@ class Model:
     def predict(self, x):
         return self.model.predict(x)
 
->> >> >> > fsspec
-
 ```
 
 ### Advance machine learning example
@@ -109,6 +106,7 @@ recently_watched_store = RedisStore.open("redis://last_3_movies")  # {1: [1, 2, 
 video_embedding = SafetensorsStore.open("video_embedding.db")  # {1: [0.1, 0.2, 0.3]}
 models = FilesystemStore.open("s3://models/22-02-2022/")  # {"v1": SuperNN(),...}
 
+# updates
 model = models.get(dt.now().hour, "default_model")  # update the model every hour
 video_embedding.load('s3://video_embeddings/day')  # load the video embeddings every day
 
@@ -125,8 +123,8 @@ def predict(user):
 
 ```
 
-* This can be even more efficient if we save the already computed embeddings straight in redis, but this gets the point
-  across.
+* This can be even more efficient if we save the already computed average embeddings straight in redis, but this example
+  should get the point across.
 
 
 
