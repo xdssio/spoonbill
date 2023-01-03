@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spoonbill-framework"
+version = "0.0.1a1"
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies = ["cloudpickle", "fsspec"]
+keywords = ["dict", "key-value", "gcp", "azure", "aws", "s3", "lmdb", "pysos", "redis", "dynamodb", "mongodb", "cosmosdb", "safetensors"]
+requires-python = ">=3.7"
+description = "A lightweight, universal interface for Key-Values data stores"
+
+
+
+[project.optional-dependencies]
+redis = ["redis"]
+lmdbm = ["lmdbm"]
+pysos = ["pysos"]
+safetensors = ["safetensors"]
+mongodb = ["pymongo"]
+aws = ["boto3", "s3fs", "cerealbox"]
+gcp = ["google-cloud-firestore"]
+azure = ["azure-cosmos"]
+dev = ["pytest", "sphinx", "sphinx-rtd-theme", "sphinx-autodoc-typehints", "sphinxcontrib-napoleon", "sphinxcontrib-apidoc"]
+
+[tool.setuptools]
+packages = ["spoonbill"]
+
+[project.urls]
+Homepage = "https://github.com/xdssio/spoonbill"
+
+[tool.bumpver]
+current_version = "0.0.1a0"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+]
+"README.md" = [
+    "{version}",
+    "{pep440_version}",
+]
+
+
+
