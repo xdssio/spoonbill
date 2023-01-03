@@ -1,6 +1,7 @@
 from tempfile import TemporaryDirectory
+from spoonbill.datastores.safetensors import SafetensorsStore, serialize, deserialize, SafetensorsInMemoryStore, \
+    SafetensorsLmdbStore
 
-from spoonbill.datastores import SafetensorsStore
 import pytest
 import numpy as np
 
@@ -27,3 +28,31 @@ def test_safetensors_strict():
 
     d = store.to_dict()
     assert d['weight1'].tolist() == data['weight1'].tolist()
+
+
+def test_safetensors_inmemory_store():
+    store = SafetensorsInMemoryStore(framework=SafetensorsStore.NUMPY)
+    store['1'] = np.array([1, 2, 3])
+    tmpdir = TemporaryDirectory()
+    path = tmpdir.name + '/tmp.db'
+    new_store = store.export_safetensors(path)
+    assert len(new_store) == 1
+
+
+def test_safetensors_lmbd_store():
+    tmpdir = TemporaryDirectory()
+    path = tmpdir.name + '/tmp.db'
+    store = SafetensorsLmdbStore(path=path, framework=SafetensorsStore.NUMPY)
+    store['1'] = np.array([1, 2, 3])
+
+    new_path = tmpdir.name + '/tmp2.db'
+    new_store = store.export_safetensors(new_path)
+    assert len(new_store) == 1
+
+
+def test_safetensors_serialized():
+    data = {"weight1": np.array([1, 2, 3]), "weight2": np.array([4, 5, 6])}
+    serialized = serialize(data, framework='np')
+    results = deserialize(serialized, framework='np')
+    assert results['weight1'].tolist() == data['weight1'].tolist()
+    assert results['weight2'].tolist() == data['weight2'].tolist()

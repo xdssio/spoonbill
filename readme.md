@@ -252,7 +252,27 @@ store = SafetensorsStore.open('tmp.db', framework=SafetensorsStore.NUMPY, device
 store['weight1']  # returns a numpy array
 store['weight1'] = 1  # raises an error
 ```
+If you must be able to have a mutable store, you can use the `SafetensorsInMemoryStore`.
 
+```python
+from spoonbill.datastores import SafetensorsInMemoryStore, SafetensorsStore
+import numpy as np
+
+store = SafetensorsInMemoryStore(framework=SafetensorsStore.NUMPY)
+store['weight'] = np.array([1, 2, 3])  # backed by a InMemoryStore
+safetensors_store = store.export_safetensors("path")
+```
+In you want a mutable and persisted safetensors, we got you cover with the `SafetensorsLmdbStore` backed by the LmdbStore backend
+* ```pip install lmdbm```
+
+```python
+from spoonbill.datastores import SafetensorsLmdbStore, SafetensorsStore
+import numpy as np
+
+store = SafetensorsLmdbStore(path='tmp.db', framework=SafetensorsStore.NUMPY)
+store['weight'] = np.array([1, 2, 3]) # backed by a LmdbStore
+safetensors_store = store.export_safetensors("path")
+```
 ## FilesystemStore
 
 This dict is implemented as key-value files locally or on a cloud provider. It is **slow**, but good for as a cheap

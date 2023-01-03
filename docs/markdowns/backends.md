@@ -29,7 +29,6 @@ This is a Python DBM interface style wrapper around [LMDB](http://www.lmdb.tech/
 
 [Details](https://en.wikipedia.org/wiki/Lightning_Memory-Mapped_Database)
 
-
 Requirements:   
 ```pip install lmdbm```
 
@@ -96,10 +95,57 @@ store['weight1']  # returns a numpy array
 store['weight1'] = 1  # raises an error
 ```
 
+If you must be able to have a mutable store, you can use the `SafetensorsInMemoryStore`.
+
+```python
+from spoonbill.datastores import SafetensorsInMemoryStore, SafetensorsStore
+import numpy as np
+
+store = SafetensorsInMemoryStore(framework=SafetensorsStore.NUMPY)
+store['weight'] = np.array([1, 2, 3])  # backed by a InMemoryStore
+safetensors_store = store.export_safetensors("path")
+```
+
+In you want a mutable and persisted safetensors, we got you cover with the `SafetensorsLmdbStore` backed by the
+LmdbStore backend
+
+* ```pip install lmdbm```
+
+```python
+from spoonbill.datastores import SafetensorsLmdbStore, SafetensorsStore
+import numpy as np
+
+store = SafetensorsLmdbStore(path='tmp.db', framework=SafetensorsStore.NUMPY)
+store['weight'] = np.array([1, 2, 3])  # backed by a LmdbStore
+safetensors_store = store.export_safetensors("path")
+```
+
+* You can also just use safetensors *serielize* and *deserialize* functions to convert dicts to bytes and back.
+
+```python
+from spoonbill.datastores.safetensors import serialize, deserialize
+import numpy as np
+
+data = {"weight1": np.array([1, 2, 3]), "weight2": np.array([4, 5, 6])}
+serialized = serialize(data, framework='np')
+results = deserialize(serialized, framework='np')
+```
+
+* You can also just use safetensors *serielize* and *deserialize* functions to convert dicts to bytes and back.
+
+```python
+from spoonbill.datastores.safetensors import serialize, deserialize
+import numpy as np
+
+data = {"weight1": np.array([1, 2, 3]), "weight2": np.array([4, 5, 6])}
+serialized = serialize(data, framework='np')
+results = deserialize(serialized, framework='np')
+```
+
 ## FilesystemStore
 
-This dict is implemented as key-value files locally or on a cloud provider. It is **slow**, but good for as
-a cheap persisted key-value store. It is a wrapepr
+This dict is implemented as key-value files locally or on a cloud provider. It is **slow**, but good for as a cheap
+persisted key-value store. It is a wrapepr
 around [fsspec](https://filesystem-spec.readthedocs.io/en/latest/features.html#key-value-stores) key-value feature.
 Therefor it supports all the filesystems supported by fsspec (s3, gs, az, local, ftp, http, etc).
 

@@ -1,6 +1,56 @@
 import contextlib
 
-from spoonbill.datastores import ContextStore
+from spoonbill.datastores import ContextStore, InMemoryStore, VALUE
+
+
+def get_framework_save_file(framework):
+    if framework == SafetensorsStore.TORCH:
+        from safetensors.torch import save_file
+    elif framework == SafetensorsStore.TENSORFLOW:
+        from safetensors.tensorflow import save_file
+    elif framework == SafetensorsStore.FLAX:
+        from safetensors.flax import save_file
+    elif framework == SafetensorsStore.NUMPY:
+        from safetensors.numpy import save_file
+    else:
+        raise ValueError('Unknown framework: {}'.format(framework))
+    return save_file
+
+
+def get_framework_serialize(framework):
+    if framework == SafetensorsStore.TORCH:
+        from safetensors.torch import load
+    elif framework == SafetensorsStore.TENSORFLOW:
+        from safetensors.tensorflow import save
+    elif framework == SafetensorsStore.FLAX:
+        from safetensors.flax import save
+    elif framework == SafetensorsStore.NUMPY:
+        from safetensors.numpy import save
+    else:
+        raise ValueError('Unknown framework: {}'.format(framework))
+    return save
+
+
+def get_framework_deserialize(framework):
+    if framework == SafetensorsStore.TORCH:
+        from safetensors.torch import load
+    elif framework == SafetensorsStore.TENSORFLOW:
+        from safetensors.tensorflow import load
+    elif framework == SafetensorsStore.FLAX:
+        from safetensors.flax import load
+    elif framework == SafetensorsStore.NUMPY:
+        from safetensors.numpy import load
+    else:
+        raise ValueError('Unknown framework: {}'.format(framework))
+    return load
+
+
+def serialize(data, framework='pt'):
+    return get_framework_serialize(framework)(data)
+
+
+def deserialize(data, framework='pt'):
+    return get_framework_deserialize(framework)(data)
 
 
 class SafetensorsStore(ContextStore):
@@ -26,17 +76,7 @@ class SafetensorsStore(ContextStore):
 
     @classmethod
     def export_safetensors(cls, d: dict, path: str, framework: str, device='cpu'):
-        if framework == SafetensorsStore.TORCH:
-            from safetensors.torch import save_file
-        elif framework == SafetensorsStore.TENSORFLOW:
-            from safetensors.tensorflow import save_file
-        elif framework == SafetensorsStore.FLAX:
-            from safetensors.flax import save_file
-        elif framework == SafetensorsStore.NUMPY:
-            from safetensors.numpy import save_file
-        else:
-            raise ValueError(f'Framework {framework} not supported')
-        save_file(d, path)
+        get_framework_save_file(framework)(d, path)
         return cls(path, framework, device)
 
     @classmethod
@@ -106,3 +146,68 @@ class SafetensorsStore(ContextStore):
 
     def load(self, path):
         self.store_path = path
+
+
+class SafetensorsInMemoryStore(InMemoryStore):
+
+    def __init__(self, store: dict = None, framework='pt', device='cpu'):
+        """
+        :param store: a dictionary to use as the store
+        :param strict: if False, encode and decode keys and values with cloudpickle
+        """
+        super().__init__(store=store, strict=False, as_string=True)
+        self.framework = framework
+        self.device = device
+
+    def encode_key(self, key):
+        return str(key)
+
+    def encode_value(self, value):
+        if not isinstance(value, dict):
+            value = {VALUE: value}
+        return serialize(value, self.framework)
+
+    def decode_value(self, value):
+        result = deserialize(value, self.framework)
+        if VALUE in result:
+            result = result[VALUE]
+        return result
+
+    def export_safetensors(self, path: str):
+        return SafetensorsStore.from_dict({key: value for key, value in self.items()}, path, self.framework,
+                                          self.device)
+
+
+with contextlib.suppress(ImportError):
+    from spoonbill.datastores import LmdbStore
+
+
+    class SafetensorsLmdbStore(LmdbStore):
+
+        def __init__(self, path: str, flag: str = "c", mode: int = 0o755, map_size: int = 2 ** 20,
+                     autogrow: bool = True,
+                     framework='pt', device='cpu'):
+            self.store_path = path
+            self.strict = False
+            self.as_string = True
+            self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
+            self.framework = framework
+            self.device = device
+
+        def encode_key(self, key):
+            return str(key)
+
+        def encode_value(self, value):
+            if not isinstance(value, dict):
+                value = {VALUE: value}
+            return serialize(value, self.framework)
+
+        def decode_value(self, value):
+            result = deserialize(value, self.framework)
+            if VALUE in result:
+                result = result[VALUE]
+            return result
+
+        def export_safetensors(self, path: str):
+            return SafetensorsStore.from_dict({key: value for key, value in self.items()}, path, self.framework,
+                                              self.device)

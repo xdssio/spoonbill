@@ -352,4 +352,7 @@ with contextlib.suppress(ImportError):
     from .mongodb import MongoDBStore
 
 with contextlib.suppress(ImportError):
-    from .safetensors import SafetensorsStore
+    from .safetensors import SafetensorsStore, SafetensorsInMemoryStore, serialize, deserialize
+
+with contextlib.suppress(ImportError):
+    from .safetensors import SafetensorsLmdbStore
