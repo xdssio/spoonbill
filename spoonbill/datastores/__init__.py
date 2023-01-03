@@ -12,6 +12,12 @@ RANDOM_VALUE = '#5f1a7da3a2b04d629231108bb6548dcb#'
 
 
 class Strict:
+    """
+    A class to wrap a dict-like object to make it strict or not.
+    A non-strict dict will encode all keys and values to bytes using cloudpickle.
+    Pros - Very flexiable and can be use in the same way as a normal dict, everywhere.
+    Con - On some backends, a loss of functionality and speed is possible.
+    """
     encoding: str = 'cp1252'
     strict: bool = False
     as_string: bool = True
@@ -87,10 +93,13 @@ class Strict:
 
 
 class KeyValueStore(Strict):
-    _store: typing.Any = None
+    """
+    A base class for a key value store.
+    """
+    _store = None
     strict: bool = False
 
-    def __init__(self, store: typing.Any, strict: bool = False):
+    def __init__(self, store , strict: bool = False):
         self._store = store
         self.strict = strict
 
@@ -203,8 +212,11 @@ class KeyValueStore(Strict):
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
 
-class ContextStore(KeyValueStore, Strict):    
-    context = typing.Any = None
+class ContextStore(KeyValueStore, Strict):
+    """
+    The base class for context store - where the backend is used as a context manager.
+    """
+    context = None
 
     def __getitem__(self, item):
         with self.context as store:

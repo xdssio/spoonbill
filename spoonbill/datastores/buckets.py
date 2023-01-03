@@ -9,6 +9,11 @@ def is_cloud_url(path):
 
 
 class BucketStore(KeyValueStore):
+    """
+    A dictionary implemented as a bucket of files.
+    Pros: cloud persistent, cheap.
+    Cons: slow.
+    """
     COUNT_KEY = f"count__count__count"
 
     def __init__(self, path):
@@ -129,7 +134,6 @@ class BucketStore(KeyValueStore):
             keys = self._iter_keys(limit=limit)
         for key in keys:
             yield self.decode_value(self._to_key(key).read_text())
-
 
     def __contains__(self, item):
         return self._to_key(item).is_file()

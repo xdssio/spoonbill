@@ -9,8 +9,9 @@ from spoonbill.datastores import KeyValueStore, KEY, VALUE
 
 class InMemoryStore(KeyValueStore):
     """
-    A key-value store that datastores everything in memory.
-    Practically a python dictionary
+    A simple dictionary implementation.
+    Pros: fast, cheap.
+    Cons: Not persistent.
 
     """
 

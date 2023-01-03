@@ -15,6 +15,9 @@ DYNAMODB = 'dynamodb'
 
 
 class DynamoDBStore(KeyValueStore):
+    """
+    A DynamoDB key-value store.
+    """
 
     def __init__(self, table_name: str, key_type: str = 'S', key=KEY, **kwargs):
         self.table_name = table_name

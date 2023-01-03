@@ -7,6 +7,9 @@ ID = '_id'
 
 
 class MongoDBStore(KeyValueStore):
+    """
+    MongoDB wrapper as a key-value store.
+    """
 
     def __init__(self, uri: str = None,
                  database: str = 'db',

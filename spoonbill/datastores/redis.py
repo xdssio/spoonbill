@@ -11,6 +11,9 @@ REDIS_DEFAULT_DB = 1
 
 
 class RedisStore(KeyValueStore, Strict):
+    """
+    Redis Key-value store
+    """
 
     def __init__(self, store: typing.Any, strict: bool = False):
         """

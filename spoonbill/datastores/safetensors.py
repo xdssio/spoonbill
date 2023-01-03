@@ -4,6 +4,9 @@ from spoonbill.datastores import ContextStore
 
 
 class SafetensorsStore(ContextStore):
+    """
+    SafetensorsStore is a wrapper around the safetensors library.
+    """
     NUMPY = 'np'
     TORCH = 'pt'
     TENSORFLOW = 'tf'
