@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spoonbill-framework"
-version = "0.0.1a2"
+version = "0.0.1a3"
 license = { file = "LICENSE" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -16,8 +16,6 @@ keywords = ["dict", "key-value", "gcp", "azure", "aws", "s3", "lmdb", "pysos", "
 requires-python = ">=3.7"
 description = "A lightweight, universal interface for Key-Values data stores"
 readme = "README.md"
-
-
 
 [project.optional-dependencies]
 redis = ["redis"]

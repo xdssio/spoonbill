@@ -391,12 +391,14 @@ Mock data on local dictionary and cloud store in dev or production.
 from spoonbill.datastores import DynamoDBStore, InMemoryStore
 import os
 
-connections = {"test": (InMemoryStore, "mock_data_file"),
-               "prod": (DynamoDBStore, "dynamodb://.../prod_table"),
-               "dev": (DynamoDBStore, "dynamodb://.../dev_table")}
+environment = os.getenv("environment", "test")
 
-store_class, uri = connections.get(os.getenv("environment", "test"), "test")
-store = store_class.open(uri=uri)
+if environment == "test":
+    store = InMemoryStore.open("mock data")
+elif environment == "dev":
+    store = DynamoDBStore.open("dev table")
+else:
+    store = DynamoDBStore.open("prod table")
 ```
 
 Real-time feature engineering with any backend
