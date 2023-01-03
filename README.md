@@ -17,53 +17,10 @@ For fast prototyping, testing, and simplification of data pipelines.
 3. A lightweight, fast, and flexible library.
 4. Extra features like Search, batch inserts and retrieval on (almost) all backends.
 
-
-## Use cases
-
-Mock data on local dictionary and cloud store in dev or production.
-
-```python
-from spoonbill.datastores import DynamoDBStore, InMemoryStore
-import os
-
-connections = {"test": (InMemoryStore, "mock_data_file"),
-               "prod": (DynamoDBStore, "dynamodb://.../prod_table"),
-               "dev": (DynamoDBStore, "dynamodb://.../dev_table")}
-
-store_class, uri = connections.get(os.getenv("environment", "test"), "test")
-store = store_class.open(uri=uri)
-```
-
-Real-time feature engineering with any backend
-
-```python
-from spoonbill.datastores import RedisStore
-import pandas as pd
-
-df = pd.DataFrame({'user': [1, 2, 3]})
-feature_store = RedisStore.open("features table")  # {1: {"age":20:, "sex":female",...}}
-
-
-def get_user_details(x):
-    default = {"age": 25, "sex": "female"}
-    return pd.Series(feature_store.get(x['user'], default).values())
-
-
-df[['age', 'sex']] = df.apply(get_user_details, axis=1)
-df
-"""
-   user  age     sex
-0     1   20    male
-1     2   30  female
-2     3   25  female
-"""
-```
-
-
 ## Installation
 
 ```bash
-pip install spoonbill
+pip install spoonbill-framework
 ```
 
 ## Operations map
@@ -95,8 +52,8 @@ pip install spoonbill
 
 All the classes have the same interface, so you can use them interchangeably.
 
-* The *strict* argument is used to control if to encode the keys and values with cloudpickle or keep original backend behavior.
-  if strict is False, any key and value can be used, otherwise it depends on the backend.
+* The *strict* argument is used to control if to encode the keys and values with cloudpickle or keep original backend
+  behavior. if strict is False, any key and value can be used, otherwise it depends on the backend.
 
 ## APIs
 
@@ -141,9 +98,9 @@ store.items(conditions={'a': '1+', 'b': 1}, limit=10)  # filter based on match c
 ### How to choose a backend?
 
 For fastest performance, use the InMemoryStore. It is a simple dict that is not persisted to disk.      
-If you need local persistence, I prefer the LmdbStore, but PysosStore and ShelveStore should work too. 
+If you need local persistence, I prefer the LmdbStore, but PysosStore and ShelveStore should work too.
 
-If speed is not important, but you want cheap persistence in the cloud, use FilesystemStore.
+If speed is not important, but you want cheap persistence in the cloud, use FilesystemStore with S3,GCP, or Azure.
 
 If you are using it to load tensors for embedding or deep learning weights, use SafetensorsStore
 
@@ -161,7 +118,7 @@ If you need very fast realtime, then the RedisStore is the best choice.
 ## InMemoryStore
 
 This object is to have a common interface for all the key-value stores. It is great for testing and for the average use
-case, to have a common interface which includes the search operation.
+case, to have a common interface which includes the search operations.
 
 * Save/load are implemented to save/load the whole dict to/from a file, locally or on the cloud
   using [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=s3#other-known-implementations).
@@ -252,6 +209,7 @@ store = SafetensorsStore.open('tmp.db', framework=SafetensorsStore.NUMPY, device
 store['weight1']  # returns a numpy array
 store['weight1'] = 1  # raises an error
 ```
+
 If you must be able to have a mutable store, you can use the `SafetensorsInMemoryStore`.
 
 ```python
@@ -262,7 +220,10 @@ store = SafetensorsInMemoryStore(framework=SafetensorsStore.NUMPY)
 store['weight'] = np.array([1, 2, 3])  # backed by a InMemoryStore
 safetensors_store = store.export_safetensors("path")
 ```
-In you want a mutable and persisted safetensors, we got you cover with the `SafetensorsLmdbStore` backed by the LmdbStore backend
+
+In you want a mutable and persisted safetensors, we got you cover with the `SafetensorsLmdbStore` backed by the
+LmdbStore backend
+
 * ```pip install lmdbm```
 
 ```python
@@ -270,9 +231,10 @@ from spoonbill.datastores import SafetensorsLmdbStore, SafetensorsStore
 import numpy as np
 
 store = SafetensorsLmdbStore(path='tmp.db', framework=SafetensorsStore.NUMPY)
-store['weight'] = np.array([1, 2, 3]) # backed by a LmdbStore
+store['weight'] = np.array([1, 2, 3])  # backed by a LmdbStore
 safetensors_store = store.export_safetensors("path")
 ```
+
 ## FilesystemStore
 
 This dict is implemented as key-value files locally or on a cloud provider. It is **slow**, but good for as a cheap
@@ -298,7 +260,7 @@ store.save("local_dir_path")
 
 Probably the fastest solution for key-value stores not only in python, but in general. It is a great solution.
 
-* When strict=False any key-value can be used, otherwise only string keys and values can be used.
+* When *strict=False* any key-value can be used, otherwise only string keys and values can be used.
 * When using keys with patterns -> the pattern is passed to redis *keys* function, so the behaviour is what you would
   expect from redis.
 * Redis doesn't have any search for values.
@@ -421,3 +383,43 @@ store = CosmosDBStore.open(database='db',
                            credential='credential')
 ```
 
+## Use cases
+
+Mock data on local dictionary and cloud store in dev or production.
+
+```python
+from spoonbill.datastores import DynamoDBStore, InMemoryStore
+import os
+
+connections = {"test": (InMemoryStore, "mock_data_file"),
+               "prod": (DynamoDBStore, "dynamodb://.../prod_table"),
+               "dev": (DynamoDBStore, "dynamodb://.../dev_table")}
+
+store_class, uri = connections.get(os.getenv("environment", "test"), "test")
+store = store_class.open(uri=uri)
+```
+
+Real-time feature engineering with any backend
+
+```python
+from spoonbill.datastores import RedisStore
+import pandas as pd
+
+df = pd.DataFrame({'user': [1, 2, 3]})
+feature_store = RedisStore.open("features table")  # {1: {"age":20:, "sex":female",...}}
+
+
+def get_user_details(x):
+    default = {"age": 25, "sex": "female"}
+    return pd.Series(feature_store.get(x['user'], default).values())
+
+
+df[['age', 'sex']] = df.apply(get_user_details, axis=1)
+df
+"""
+   user  age     sex
+0     1   20    male
+1     2   30  female
+2     3   25  female
+"""
+```

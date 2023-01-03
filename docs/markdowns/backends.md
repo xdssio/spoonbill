@@ -3,7 +3,7 @@
 ## InMemoryStore
 
 This object is to have a common interface for all the key-value stores. It is great for testing and for the average use
-case, to have a common interface which includes the search operation.
+case, to have a common interface which includes the search operations.
 
 * Save/load are implemented to save/load the whole dict to/from a file, locally or on the cloud
   using [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=s3#other-known-implementations).
@@ -167,7 +167,7 @@ store.save("local_dir_path")
 
 Probably the fastest solution for key-value stores not only in python, but in general. It is a great solution.
 
-* When strict=False any key-value can be used, otherwise only string keys and values can be used.
+* When *strict=False* any key-value can be used, otherwise only string keys and values can be used.
 * When using keys with patterns -> the pattern is passed to redis *keys* function, so the behaviour is what you would
   expect from redis.
 * Redis doesn't have any search for values.

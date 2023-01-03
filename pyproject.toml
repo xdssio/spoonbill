@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spoonbill-framework"
-version = "0.0.1a1"
+version = "0.0.1a2"
 license = { file = "LICENSE" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -15,6 +15,7 @@ dependencies = ["cloudpickle", "fsspec"]
 keywords = ["dict", "key-value", "gcp", "azure", "aws", "s3", "lmdb", "pysos", "redis", "dynamodb", "mongodb", "cosmosdb", "safetensors"]
 requires-python = ">=3.7"
 description = "A lightweight, universal interface for Key-Values data stores"
+readme = "README.md"
 
 
 
