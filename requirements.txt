@@ -2,8 +2,8 @@ async-timeout==4.0.2
 boto3==1.26.30
 botocore==1.29.30
 chardet==5.1.0
-cloudpathlib==0.10.0
 cloudpickle==2.2.0
+fsspec==2022.11.0
 jmespath==1.0.1
 lmdb==1.4.0
 lmdbm==0.0.5

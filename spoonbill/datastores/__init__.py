@@ -1,10 +1,8 @@
 import typing
 import contextlib
-import warnings
-
 import cloudpickle
 import re
-import pathlib
+from spoonbill.filesystem import FileSystem
 
 KEY = 'ID__'
 VALUE = 'VALUE__'
@@ -66,30 +64,13 @@ class Strict:
             return value
         return self.decode(value)
 
-    def save(self, path):
-        path = self._get_path(path)
-        path.write_bytes(cloudpickle.dumps(self))
+    def save(self, path, **kwargs):
+        FileSystem(path, **kwargs).write_bytes(cloudpickle.dumps(self))
         return True
 
-    @staticmethod
-    def _is_cloud_url(path):
-        if hasattr(path, 'dirname'):
-            path = path.dirname
-        return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", path) is not None
-
     @classmethod
-    def _get_path(cls, path):
-        if cls._is_cloud_url(path):
-            import cloudpathlib
-            return cloudpathlib.CloudPath(path)
-        return pathlib.Path(path)
-
-    @classmethod
-    def from_file(cls, path):
-        path = cls._get_path(path)
-        return cloudpickle.loads(path.read_bytes())
-
-    load = from_file
+    def load(cls, path, **kwargs):
+        return cloudpickle.loads(FileSystem(path).read_bytes())
 
 
 class KeyValueStore(Strict):
@@ -99,7 +80,11 @@ class KeyValueStore(Strict):
     _store = None
     strict: bool = False
 
+<<<<<<< HEAD
     def __init__(self, store , strict: bool = False):
+=======
+    def __init__(self, store, strict: bool = False):
+>>>>>>> fsspec
         self._store = store
         self.strict = strict
 
@@ -159,14 +144,18 @@ class KeyValueStore(Strict):
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
-        for key in self._store.keys():
+        for i, key in enumerate(self._store.keys()):
+            if i == limit:
+                break
             key = self.decode_key(key)
             if is_valid(key):
                 yield key
 
     def values(self, keys: list = None, limit: int = None, default=None):
         if keys:
-            for key in keys:
+            for i, key in enumerate(keys):
+                if i == limit:
+                    break
                 yield self.get(key, default)
         else:
             for i, value in enumerate(self._store.values()):
@@ -211,7 +200,40 @@ class KeyValueStore(Strict):
                 :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
+    def _from_directory(self, path):
+        mapper = FileSystem(path).get_mapper()
+        self._flush()
 
+<<<<<<< HEAD
+=======
+        def decode_key(key):
+            if key is not None:
+                if isinstance(key, str) and str(key)[:3] in ('b"\\', "b'\\"):
+                    return cloudpickle.loads(eval(key))
+                return key
+
+        for key, value in mapper.items():
+            self[decode_key(key)] = cloudpickle.loads(value)
+        return self
+
+    def reload(self, other):
+        if isinstance(other, str):
+            filesystem = FileSystem(other)
+            if filesystem.fs.isfile(other):
+                store = cloudpickle.loads(filesystem.read_bytes(other))
+            elif filesystem.fs.isdir(other):
+                return self._from_directory(other)
+            else:
+                raise ValueError(f"Path {other} is not a file or directory")
+        elif isinstance(other, KeyValueStore):
+            store = other
+        self._flush()
+        for key, value in store.items():
+            self[key] = value
+        return self
+
+
+>>>>>>> fsspec
 class ContextStore(KeyValueStore, Strict):
     """
     The base class for context store - where the backend is used as a context manager.
@@ -292,10 +314,12 @@ class ContextStore(KeyValueStore, Strict):
             store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
         return self
 
-    def _cp(self, source, target):
-        source_path = self._get_path(source)
-        target_path = self._get_path(target)
-        target_path.write_bytes(source_path.read_bytes())
+    def _cp(self, source, target, **kwargs):
+
+        FileSystem(target).write_bytes(FileSystem(source, **kwargs).read_bytes())
+
+        # save_bytes(target, load_bytes(source, **kwargs), **kwargs)
+        return True
 
     def save(self, path):
         self._cp(self.store_path, path)
@@ -325,7 +349,7 @@ with contextlib.suppress(ImportError):
     from .firestore import Firestore
 
 with contextlib.suppress(ImportError):
-    from .buckets import BucketStore
+    from .filesystem import FilesystemStore
 
 with contextlib.suppress(ImportError):
     from .cosmos import CosmosDBStore

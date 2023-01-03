@@ -3,8 +3,8 @@ import contextlib
 import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
-
 from spoonbill.datastores import ContextStore
+from spoonbill.filesystem import FileSystem
 
 
 class CloudpickleEncoder(lmdbm.Lmdb):
@@ -79,19 +79,9 @@ class LmdbStore(ContextStore):
         )
 
     def save(self, path):
-        source_path = self._get_path(self.store_path)
-        files = {file.name: file.read_bytes() for file in source_path.glob("*")}
-        target_path = self._get_path(path)
-        with contextlib.suppress(FileNotFoundError):
-            target_path.rmdir()
-        target_path.write_bytes(cloudpickle.dumps(files))
+        FileSystem(self.store_path).copy_dir(self.store_path, path)
         return True
 
     def load(self, path):
-        source_path = self._get_path(path)
-        files = cloudpickle.loads(source_path.read_bytes())
-        target_path = self._get_path(self.store_path)
-        target_path.mkdir(parents=True, exist_ok=True)
-        for name, data in files.items():
-            target_path.joinpath(name).write_bytes(data)
+        FileSystem(path).copy_dir(path, self.store_path)
         return self

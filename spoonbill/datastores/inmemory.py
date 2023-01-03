@@ -15,7 +15,7 @@ class InMemoryStore(KeyValueStore):
 
     """
 
-    def __init__(self, store: dict = None, strict: bool = True):
+    def __init__(self, store: dict = None, strict: bool = True, as_string=False):
         """
         :param store: a dictionary to use as the store
         :param strict: if False, encode and decode keys and values with cloudpickle
@@ -24,10 +24,11 @@ class InMemoryStore(KeyValueStore):
         if store:
             if isinstance(store, dict):
                 self._store = store
-            elif isinstance(store, str):
-                self.load(store)
+            elif isinstance(store, (str, KeyValueStore)):
+                self.reload(store)
+
         self.strict = strict
-        self.as_string = False
+        self.as_string = as_string
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -55,18 +56,6 @@ class InMemoryStore(KeyValueStore):
         :return:
         """
         return InMemoryStore(store=path, strict=strict)
-
-    def save(self, path):
-        target_path = self._get_path(path)
-        target_path.write_bytes(cloudpickle.dumps(self))
-        return path
-
-    def load(self, path):
-        path = self._get_path(path)
-        loaded = cloudpickle.loads(path.read_bytes())
-        self._store = loaded._store
-        self.strict = loaded.strict
-        return self
 
     @staticmethod
     def _is_encoded(value):
