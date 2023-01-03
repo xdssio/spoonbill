@@ -56,18 +56,6 @@ class InMemoryStore(KeyValueStore):
         """
         return InMemoryStore(store=path, strict=strict)
 
-    def save(self, path):
-        target_path = self._get_path(path)
-        target_path.write_bytes(cloudpickle.dumps(self))
-        return path
-
-    def load(self, path):
-        path = self._get_path(path)
-        loaded = cloudpickle.loads(path.read_bytes())
-        self._store = loaded._store
-        self.strict = loaded.strict
-        return self
-
     @staticmethod
     def _is_encoded(value):
         return str(value)[:2] == "b'"

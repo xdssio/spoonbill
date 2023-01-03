@@ -26,6 +26,7 @@ def test_bucket_dict():
     assert store.update({'test': 'test2', 'another': 'another2'})
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
+    assert store.popitem()
 
     store._flush()
     N = 1000
@@ -37,7 +38,7 @@ def test_bucket_dict():
 
 @pytest.mark.skip("Run manually")
 def buclketdict_s3():
-    path = 's3://xdss-tmp/tmp.db'
+    path = 's3://xdss-tmp/tmp.db/'
     store = BucketStore.open(path)
     store._flush()
     store['test'] = 'test'
@@ -50,7 +51,8 @@ def buclketdict_s3():
     assert set(store.values()) == set(['test', 'another'])
     assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
 
-    assert list(store.keys(patterns='test')) == ['test']
+    assert list(store.keys(pattern='test')) == ['test']
+    assert list(store.values(keys=['test'])) == ['test']
     assert list(store.items(conditions='test')) == [('test', 'test')]
 
     assert store.pop('another') == 'another'
@@ -60,9 +62,14 @@ def buclketdict_s3():
     assert len(store) == 2
     assert store == {'test': 'test2', 'another': 'another2'}
 
+    store['test'] = {'a': 1, 'b': 2}
+    assert list(store.items(conditions={'a': 1})) == [('test', {'a': 1, 'b': 2})]
+    store['function'] = lambda x: x + 1
+    assert store['function'](1) == 2
+
     store._flush()
-    store.set_batch(range(11), range(11))
+    store.update({i: i for i in range(11)})
     assert len(store) == 11
-    assert list(store.get_batch(range(10))) == list(range(10))
+    assert list(store.values(range(10))) == list(range(10))
     assert len([1 for _ in store]) == 11  # test iterator
     store._flush()

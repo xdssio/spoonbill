@@ -50,6 +50,7 @@ def test_lmdb_save_load():
     other_path = tmpdir.name + '/cloud.db'
     store.save(other_path)
     store._flush()
+
     assert len(store) == 0
     store = LmdbStore(local_path).load(other_path)
     assert len(store) == 1

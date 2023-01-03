@@ -1,10 +1,11 @@
 import typing
 import contextlib
 import warnings
-
+import spoonbill.filesystem
 import cloudpickle
 import re
 import pathlib
+import fsspec
 
 KEY = 'ID__'
 VALUE = 'VALUE__'
@@ -66,9 +67,8 @@ class Strict:
             return value
         return self.decode(value)
 
-    def save(self, path):
-        path = self._get_path(path)
-        path.write_bytes(cloudpickle.dumps(self))
+    def save(self, path, **kwargs):
+        spoonbill.filesystem.save_bytes(path, cloudpickle.dumps(self), **kwargs)
         return True
 
     @staticmethod
@@ -85,9 +85,8 @@ class Strict:
         return pathlib.Path(path)
 
     @classmethod
-    def from_file(cls, path):
-        path = cls._get_path(path)
-        return cloudpickle.loads(path.read_bytes())
+    def from_file(cls, path, **kwargs):
+        return cloudpickle.loads(spoonbill.filesystem.load_bytes(path, **kwargs))
 
     load = from_file
 
@@ -99,7 +98,7 @@ class KeyValueStore(Strict):
     _store = None
     strict: bool = False
 
-    def __init__(self, store , strict: bool = False):
+    def __init__(self, store, strict: bool = False):
         self._store = store
         self.strict = strict
 
@@ -159,14 +158,18 @@ class KeyValueStore(Strict):
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
-        for key in self._store.keys():
+        for i, key in enumerate(self._store.keys()):
+            if i == limit:
+                break
             key = self.decode_key(key)
             if is_valid(key):
                 yield key
 
     def values(self, keys: list = None, limit: int = None, default=None):
         if keys:
-            for key in keys:
+            for i, key in enumerate(keys):
+                if i == limit:
+                    break
                 yield self.get(key, default)
         else:
             for i, value in enumerate(self._store.values()):
@@ -292,12 +295,13 @@ class ContextStore(KeyValueStore, Strict):
             store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
         return self
 
-    def _cp(self, source, target):
-        source_path = self._get_path(source)
-        target_path = self._get_path(target)
-        target_path.write_bytes(source_path.read_bytes())
+    def _cp(self, source, target, **kwargs):
+        spoonbill.filesystem.save_bytes(target,
+                                        spoonbill.filesystem.load_bytes(source, **kwargs), **kwargs)
+        return True
 
     def save(self, path):
+
         self._cp(self.store_path, path)
         return path
 

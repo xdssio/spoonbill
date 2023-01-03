@@ -3,7 +3,6 @@ import contextlib
 import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
-
 from spoonbill.datastores import ContextStore
 
 
@@ -79,19 +78,17 @@ class LmdbStore(ContextStore):
         )
 
     def save(self, path):
-        source_path = self._get_path(self.store_path)
-        files = {file.name: file.read_bytes() for file in source_path.glob("*")}
-        target_path = self._get_path(path)
-        with contextlib.suppress(FileNotFoundError):
-            target_path.rmdir()
-        target_path.write_bytes(cloudpickle.dumps(files))
+        import fsspec
+        store_path = fsspec.get_mapper(self.store_path)
+        target_path = fsspec.get_mapper(path)
+        for key, value in store_path.items():
+            target_path[key] = value
         return True
 
     def load(self, path):
-        source_path = self._get_path(path)
-        files = cloudpickle.loads(source_path.read_bytes())
-        target_path = self._get_path(self.store_path)
-        target_path.mkdir(parents=True, exist_ok=True)
-        for name, data in files.items():
-            target_path.joinpath(name).write_bytes(data)
+        import fsspec
+        source_path = fsspec.get_mapper(path)
+        target_path = fsspec.get_mapper(self.store_path)
+        for key, value in source_path.items():
+            target_path[key] = value
         return self
