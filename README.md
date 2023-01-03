@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="docs/images/logo.png" alt="logo" width="400" />
+   <img src="https://github.com/xdssio/spoonbill/raw/9630a4dcb9ea4ee5dbd8dd58ae27900bdc371620/docs/images/logo.png" alt="logo" width="400" />
 </p>
 
 # Spoonbill
