@@ -4,6 +4,7 @@ import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
 from spoonbill.datastores import ContextStore
+import spoonbill.filesystem
 
 
 class CloudpickleEncoder(lmdbm.Lmdb):
@@ -78,17 +79,11 @@ class LmdbStore(ContextStore):
         )
 
     def save(self, path):
-        import fsspec
-        store_path = fsspec.get_mapper(self.store_path)
-        target_path = fsspec.get_mapper(path)
-        for key, value in store_path.items():
-            target_path[key] = value
+        spoonbill.filesystem.copy_dir(self.store_path, path)
         return True
 
     def load(self, path):
-        import fsspec
-        source_path = fsspec.get_mapper(path)
-        target_path = fsspec.get_mapper(self.store_path)
-        for key, value in source_path.items():
-            target_path[key] = value
+        spoonbill.filesystem.copy_dir(path, self.store_path)
         return self
+
+

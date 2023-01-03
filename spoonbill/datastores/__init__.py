@@ -67,10 +67,6 @@ class Strict:
             return value
         return self.decode(value)
 
-    def save(self, path, **kwargs):
-        spoonbill.filesystem.save_bytes(path, cloudpickle.dumps(self), **kwargs)
-        return True
-
     @staticmethod
     def _is_cloud_url(path):
         if hasattr(path, 'dirname'):
@@ -84,11 +80,13 @@ class Strict:
             return cloudpathlib.CloudPath(path)
         return pathlib.Path(path)
 
-    @classmethod
-    def from_file(cls, path, **kwargs):
-        return cloudpickle.loads(spoonbill.filesystem.load_bytes(path, **kwargs))
+    def save(self, path, **kwargs):
+        spoonbill.filesystem.save_bytes(path, cloudpickle.dumps(self), **kwargs)
+        return True
 
-    load = from_file
+    @classmethod
+    def load(cls, path, **kwargs):
+        return cloudpickle.loads(spoonbill.filesystem.load_bytes(path, **kwargs))
 
 
 class KeyValueStore(Strict):
@@ -214,6 +212,37 @@ class KeyValueStore(Strict):
                 :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
+    def _from_directory(self, path):
+        fs = spoonbill.filesystem.get_filesystem_from_path(path)
+        mapper = fs.get_mapper(path)
+        self._flush()
+
+        def decode_key(key):
+            if key is not None:
+                if isinstance(key, str) and str(key)[:3] in ('b"\\', "b'\\"):
+                    return cloudpickle.loads(eval(key))
+                return key
+
+        for key, value in mapper.items():
+            self[decode_key(key)] = cloudpickle.loads(value)
+        return self
+
+    def reload(self, other):
+        if isinstance(other, str):
+            fs = spoonbill.filesystem.get_filesystem_from_path(other)
+            if fs.isfile(other):
+                store = cloudpickle.loads(fs.read_bytes(other))
+            elif fs.isdir(other):
+                return self._from_directory(other)
+            else:
+                raise ValueError(f"Path {other} is not a file or directory")
+        elif isinstance(other, KeyValueStore):
+            store = other
+        self._flush()
+        for key, value in store.items():
+            self[key] = value
+        return self
+
 
 class ContextStore(KeyValueStore, Strict):
     """
@@ -329,7 +358,7 @@ with contextlib.suppress(ImportError):
     from .firestore import Firestore
 
 with contextlib.suppress(ImportError):
-    from .buckets import BucketStore
+    from .bucket import BucketStore
 
 with contextlib.suppress(ImportError):
     from .cosmos import CosmosDBStore

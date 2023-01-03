@@ -1,6 +1,6 @@
 from tempfile import TemporaryDirectory
 
-from spoonbill.datastores import InMemoryStore
+from spoonbill.datastores import InMemoryStore, BucketStore
 
 
 def test_dict_strict():
@@ -58,7 +58,16 @@ def test_inmemory_save_load():
     assert len(store) == 0
     store = InMemoryStore().load(path)
     assert len(store) == 1
-    store = InMemoryStore(path)
+
+    store = InMemoryStore({'1': '1', '2': '2'})
+    len(InMemoryStore.open(store)) == 2
+
+    bucket = BucketStore(tmpdir.name + '/bucket.db')
+    bucket.update({'1': '1', '2': '2'})
+    assert len(InMemoryStore.open(bucket)) == 2
+ 
+    bucket.save(tmpdir.name + '/dir')
+    assert len(InMemoryStore.open(tmpdir.name + '/dir')) == 2
 
 
 def test_inmemory_ordereddict():

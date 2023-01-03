@@ -1,4 +1,5 @@
-from spoonbill.datastores import KeyValueStore, KEY
+from spoonbill.datastores import KeyValueStore, InMemoryStore
+import spoonbill.filesystem
 import fsspec
 import cloudpickle
 
@@ -12,9 +13,9 @@ class BucketStore(KeyValueStore):
 
     def __init__(self, path, **kwargs):
         self._store = fsspec.get_mapper(path, **kwargs)
-        self.strict = True
+        self.strict = False
         self.as_string = False
-        self.path = path
+        self.store_path = path
 
     def encode_value(self, value):
         return cloudpickle.dumps(value)
@@ -49,3 +50,22 @@ class BucketStore(KeyValueStore):
     def popitem(self):
         item = self._store.popitem()
         return self.decode_value(item[1])
+
+    def save(self, path, **kwargs):
+        target_path = fsspec.get_mapper(path, **kwargs)
+        for key, value in self.items():
+            target_path[self.encode(key)] = self.encode(value)
+        return True
+
+    def load(self, path, **kwargs):
+        fs = spoonbill.filesystem.get_filesystem_from_path(path, **kwargs)
+        if fs.isfile(path):
+            store = InMemoryStore.load(self, path)
+        elif fs.isdir(path):
+            store = fsspec.get_mapper(path, **kwargs)
+        else:
+            raise RuntimeError(f"Path {path} is not a file or directory")
+        self._flush()
+        for key, value in store.items():
+            self[key] = value
+        return self

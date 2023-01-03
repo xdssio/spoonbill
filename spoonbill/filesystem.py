@@ -1,6 +1,7 @@
 from fsspec import AbstractFileSystem, get_filesystem_class
 from fsspec.implementations.cached import SimpleCacheFileSystem
 import typing
+import fsspec
 
 
 def get_filesystem(protocol: str, **kwargs) -> AbstractFileSystem:
@@ -34,3 +35,11 @@ def save_bytes(path: str, data: typing.Union[bytes, str], **kwargs):
 def load_bytes(path: str, **kwargs) -> bytes:
     fs = get_filesystem_from_path(path, **kwargs)
     return fs.read_bytes(path)
+
+
+def copy_dir(source: str, target: str, **kwargs):
+    source_path = fsspec.get_mapper(source, **kwargs)
+    target_path = fsspec.get_mapper(target, **kwargs)
+    for key, value in source_path.items():
+        target_path[key] = value
+    return True
