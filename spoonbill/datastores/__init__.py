@@ -356,3 +356,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .safetensors import SafetensorsLmdbStore
+
+with contextlib.suppress(ImportError):
+    from .modal import ModalStore

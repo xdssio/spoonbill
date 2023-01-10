@@ -290,3 +290,13 @@ store = CosmosDBStore.open(database='db',
                            credential='credential')
 ```
 
+## [Modal.com](https://modal.com/home)
+
+Requirements:
+
+```
+pip install modal-client
+modal token new
+```
+
+
