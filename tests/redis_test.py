@@ -67,7 +67,7 @@ def test_redis_strict():
     store._flush()
     store[1] = 1
     assert '1' in store
-    assert store[1] == store.get(1) == store.get('1') == store._store[1] == '1'
+    assert store[1] == store.get(1) == store.get('1') == store._app[1] == '1'
     store[11] = 11
     store[2] = 2
     assert set(store.scan('1*')) == set([('1', '1'), ('11', '11')])

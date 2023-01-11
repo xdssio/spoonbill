@@ -299,4 +299,28 @@ pip install modal-client
 modal token new
 ```
 
+The [modal Dict](https://modal.com/docs/reference/modal.Dict) has a different context than the other stores. For it to
+work, we must give it the stub at creation time and the handler at runtime.
+
+Currently, modal only implemented *contains*, *put*, *get*, *update*, *len*, *pop*. For the sake of consistency, we
+implemented the keys with another metadata dict and the *keys*, *values*, *items* and the search APIs naively, which
+makes them slow. It is recommended to use it mostly as cache.
+
+The ModalStore is initiated with a stub outside the runtime with data optionally, and cannot be updated outside the app
+by design. Within the runtime, the handler is passed to the store to be able to update the data.
+
+```python 
+import modal
+from spoonbill.datastores import ModalStore
+
+image = modal.Image.debian_slim().pip_install("spoonbill-framework")
+
+store = ModalStore(modal.Stub("app name", **kwargs), data={key:value}) # data is optional
+
+
+if __name__ == "__main__":
+    with stub.run() as app:
+        store = ModalStore.open(app)
+``` 
+
 

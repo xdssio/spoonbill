@@ -1,16 +1,23 @@
 from spoonbill.datastores import KeyValueStore, VALUE, KEY
 import modal
+import typing
 
 
 class ModalStore(KeyValueStore):
     KEYS = 'keys'
     SIZE = 'size'
 
-    def __init__(self, stub: str, data={}):
-        self.stub = stub
-        self.stub._main = modal.Dict(data=data)
-        self.stub._metadata = modal.Dict(data={ModalStore.KEYS: set(data.keys()), ModalStore.SIZE: len(data)})
-        self._store = None
+    def __init__(self, context: modal.Stub = None, data: dict = {}):
+        self._app = modal.container_app
+        if context is not None and isinstance(context, modal.Stub):
+            context._data = modal.Dict(data=data)
+            context._metadata = modal.Dict(data={ModalStore.KEYS: set(data.keys()), ModalStore.SIZE: len(data)})
+        if context is not None and isinstance(context, modal.App):
+            self._app = context
+
+    @classmethod
+    def open(cls, context: typing.Union[modal.Stub, modal.App] = None, data: dict = {}):
+        return ModalStore(context, data)
 
     def _contains(self, key):
         """
@@ -18,43 +25,35 @@ class ModalStore(KeyValueStore):
         :param key:
         :return:
         """
-        return key in self._store._main
+        return key in self._data
 
     @property
     def _keys(self):
-        return self._store._metadata[ModalStore.KEYS]
+        return self._metadata[ModalStore.KEYS]
+
+    @property
+    def _data(self):
+        return self._app._data
+
+    @property
+    def _metadata(self):
+        return self._app._metadata
 
     def _iter_keys(self):
         for key in self._keys:
             if self._contains(key):
                 yield key
 
-    @property
-    def _size(self):
-        return self._store._metadata[ModalStore.SIZE]
-
-    def _add_key(self, key):
-        if not self._contains(key):
-            self._increment_size()
-        self._store._metadata.put(ModalStore.KEYS, self._keys.union([key]))
-
     def _remove_key(self, key):
-        if self._contains(key):
-            self._decrement_size()
-        self._store._metadata.put(ModalStore.KEYS, self._keys.difference([key]))
-
-    def _increment_size(self):
-        self._store._metadata.put(ModalStore.SIZE, self._size + 1)
-
-    def _decrement_size(self):
-        self._store._metadata.put(ModalStore.SIZE, self._size - 1)
+        self._metadata.put(ModalStore.KEYS, self._keys.difference([key]))
 
     def set_context(self, app):
-        self._store = app
+        self._app = app
 
     def _setitem(self, key, value):
-        self._add_key(key)
-        self._store._main.put(key, value)
+        if not self._contains(key):
+            self._metadata.put(ModalStore.KEYS, self._keys.union([key]))
+        self._data.put(key, value)
 
     def __setitem__(self, key, value):
         self._setitem(key, value)
@@ -64,7 +63,7 @@ class ModalStore(KeyValueStore):
 
     def _getitem(self, key, default=None):
         if self._contains(key):
-            return self._store._main.get(key)
+            return self._data.get(key)
         return default
 
     def __getitem__(self, key):
@@ -77,15 +76,14 @@ class ModalStore(KeyValueStore):
         return self._getitem(key, default)
 
     def _delitem(self, key):
-        value = self._store._main.pop(key)
         self._remove_key(key)
-        return value
+        return self._data.pop(key)
 
     def __delitem__(self, key):
         self._delitem(key)
 
     def __len__(self):
-        return self._size
+        return self._data.len()
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
@@ -97,9 +95,9 @@ class ModalStore(KeyValueStore):
 
     def _items(self):
         for key in self._keys:
-            if key not in self._store._main:
+            if key not in self._data:
                 continue
-            yield key, self._store._main.get(key)
+            yield key, self._data.get(key)
 
     def items(self, conditions: dict = None, limit: int = None):
         if conditions is not None and not hasattr(conditions, 'items'):
@@ -120,8 +118,11 @@ class ModalStore(KeyValueStore):
                 yield self.get(key, default)
 
     def update(self, data: dict):
-        for key, value in data.items():
-            self[key] = value
+        data_keys = set(data.keys())
+        new_keys = data_keys.difference(self._keys)
+        self._data.update(**data)
+        self._metadata.put(ModalStore.KEYS, self._keys.union(new_keys))
+        return self
 
     def _flush(self):
         for key in self._keys:
@@ -143,3 +144,8 @@ class ModalStore(KeyValueStore):
         if not self._contains(key):
             return default
         return self._delitem(key)
+
+    def popitem(self):
+        if not self._keys:
+            raise KeyError('popitem(): dictionary is empty')
+        return self.pop(self._keys[0])
