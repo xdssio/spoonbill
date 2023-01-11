@@ -3,9 +3,8 @@ from spoonbill.datastores import ModalStore
 import modal
 
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")
-
-store = ModalStore("example-hello-world")
-stub = store.stub
+stub = modal.Stub("example-hello-world")
+store = ModalStore(stub, data={"hello": "world"})
 
 
 @stub.function(image=image)
@@ -19,15 +18,16 @@ def f(i):
 
 
 if __name__ == "__main__":
-    with stub.run():
+    with stub.run() as app:
         # Call the function directly.
+        store.set_store(app)
         key = 4
-        store['key'] = f.call(key)
-        print(store['key'])
+        store[key] = f.call(key)
+        print(store)
 
         # Parallel map.
-        total = 0
-        for ret in f.map(range(10)):
-            total += ret
-
-        print(total)
+        # total = 0
+        # for ret in f.map(range(10)):
+        #     total += ret
+        #
+        # print(total)
