@@ -5,6 +5,7 @@ import modal
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")
 stub = modal.Stub("example-hello-world")
 store = ModalStore(stub, data={"hello": "world"})
+stub.main = modal.Dict(data={"s": set([1, 2])})
 
 
 @stub.function(image=image)
@@ -19,11 +20,16 @@ def f(i):
 
 if __name__ == "__main__":
     with stub.run() as app:
-        # Call the function directly.
         store.set_store(app)
-        key = 4
-        store[key] = f.call(key)
+        print(len(store), store._keys)
+        for i in range(3):
+            store[i] = f(i)
         print(store)
+        # Call the function directly.
+        # store.set_store(app)
+        # key = 4
+        # store[key] = f.call(key)
+        # print(store)
 
         # Parallel map.
         # total = 0
