@@ -4,13 +4,13 @@ import modal
 
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")
 stub = modal.Stub("example-hello-world")
-
-store = ModalStore.open(stub)
+name = "test"
+store = ModalStore.open(stub=stub, name=name)
 
 
 @stub.function(image=image)
 def modal_test(*args, **kwargs):
-    store = ModalStore.open()
+    store = ModalStore.open(name=name)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -42,7 +42,7 @@ def modal_test(*args, **kwargs):
 
 if __name__ == "__main__":
     with stub.run() as app:
-        store = ModalStore.open(app)
+        store = ModalStore.open(name=name, app=app)
         store['test'] = 'test'
         assert len(store) == 1
         store._flush()

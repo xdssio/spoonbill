@@ -315,12 +315,20 @@ from spoonbill.datastores import ModalStore
 
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")
 
-store = ModalStore(modal.Stub("app name", **kwargs), data={key:value}) # data is optional
+name = "data" 
+stub = modal.Stub("app name", **kwargs)
+# with stub
+store = ModalStore(name=name, stub=stub, data={"key": "value"}) # data is optional
 
+@stub.function(image=image)
+def foo():
+  # in function
+  store = ModalStore(name=name) 
 
 if __name__ == "__main__":
     with stub.run() as app:
-        store = ModalStore.open(app)
+      # in stub.run context
+      store = ModalStore.open(name=name, app=app) 
 ``` 
 
 

@@ -1,23 +1,38 @@
 from spoonbill.datastores import KeyValueStore, VALUE, KEY
 import modal
-import typing
+import re
+
+name_pattern = re.compile(r"[^a-zA-Z\d\s:]|[ ]")
+
+name_pattern.sub('_', "fdsaf asf _asfsa")
 
 
 class ModalStore(KeyValueStore):
     KEYS = 'keys'
     SIZE = 'size'
 
-    def __init__(self, context: modal.Stub = None, data: dict = {}):
+    def __init__(self, name: str, stub: modal.Stub = None, app: modal.App = None, data: dict = {}):
+        self.name = name
+        self._name = name_pattern.sub('_', self.name)
         self._app = modal.container_app
-        if context is not None and isinstance(context, modal.Stub):
-            context._data = modal.Dict(data=data)
-            context._metadata = modal.Dict(data={ModalStore.KEYS: set(data.keys()), ModalStore.SIZE: len(data)})
-        if context is not None and isinstance(context, modal.App):
-            self._app = context
+        if stub is not None:
+            setattr(stub, self._data_name, modal.Dict(data=data))
+            setattr(stub, self._metadata_name,
+                    modal.Dict(data={ModalStore.KEYS: set(data.keys()), ModalStore.SIZE: len(data)}))
+        if app is not None:
+            self._app = app
+
+    @property
+    def _data_name(self):
+        return self._name.replace('-', '_') + '_data'
+
+    @property
+    def _metadata_name(self):
+        return self._name + '_metadata'
 
     @classmethod
-    def open(cls, context: typing.Union[modal.Stub, modal.App] = None, data: dict = {}):
-        return ModalStore(context, data)
+    def open(cls, name: str, stub: modal.Stub = None, app: modal.App = None, data: dict = {}):
+        return ModalStore(name=name, stub=stub, app=app, data=data)
 
     def _contains(self, key):
         """
@@ -33,11 +48,11 @@ class ModalStore(KeyValueStore):
 
     @property
     def _data(self):
-        return self._app._data
+        return getattr(self._app, self._data_name)
 
     @property
     def _metadata(self):
-        return self._app._metadata
+        return getattr(self._app, self._metadata_name)
 
     def _iter_keys(self):
         for key in self._keys:
