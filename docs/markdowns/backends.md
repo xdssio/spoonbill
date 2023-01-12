@@ -323,12 +323,12 @@ image = modal.Image.debian_slim().pip_install("spoonbill-framework")
 name = "data" 
 stub = modal.Stub("app name", **kwargs)
 # with stub
-store = ModalStore(name=name, stub=stub, data={"key": "value"}) # data is optional
+store = ModalStore.open(name=name, stub=stub, data={"key": "value"}) # data is optional
 
 @stub.function(image=image)
 def foo():
   # in function
-  store = ModalStore(name=name) 
+  store = ModalStore.open(name=name) 
 
 if __name__ == "__main__":
     with stub.run() as app:
