@@ -11,10 +11,7 @@ store = ModalStore.open(stub=stub, name=name)
 @stub.function(image=image)
 def modal_test(*args, **kwargs):
     store = ModalStore.open(name=name)
-    store._flush()
-    store['test'] = 'test'
-    assert len(store) == 1
-    assert store['test'] == store.get('test') == 'test'
+
     store.set('another', 'another')
     assert 'test' in store  # test contains
 
@@ -43,7 +40,8 @@ def modal_test(*args, **kwargs):
 if __name__ == "__main__":
     with stub.run() as app:
         store = ModalStore.open(name=name, app=app)
+        store._flush()
         store['test'] = 'test'
         assert len(store) == 1
-        store._flush()
+        assert store['test'] == store.get('test') == 'test'
         modal_test.call()
