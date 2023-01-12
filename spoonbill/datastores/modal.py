@@ -11,7 +11,7 @@ class ModalStore(KeyValueStore):
     KEYS = 'keys'
     SIZE = 'size'
 
-    def __init__(self, name: str, stub: modal.Stub = None, app: modal.App = None, data: dict = {}):
+    def __init__(self, name: str, stub: modal.Stub = None, app: modal.App = None, data: dict = {}, **kwargs):
         self.name = name
         self._name = name_pattern.sub('_', self.name)
         self._app = modal.container_app
@@ -31,8 +31,8 @@ class ModalStore(KeyValueStore):
         return self._name + '_metadata'
 
     @classmethod
-    def open(cls, name: str, stub: modal.Stub = None, app: modal.App = None, data: dict = {}):
-        return ModalStore(name=name, stub=stub, app=app, data=data)
+    def open(cls, name: str, stub: modal.Stub = None, app: modal.App = None, data: dict = {}, **kwargs):
+        return ModalStore(name=name, stub=stub, app=app, data=data, **kwargs)
 
     def _contains(self, key):
         """
