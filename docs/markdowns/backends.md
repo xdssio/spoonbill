@@ -300,14 +300,18 @@ modal token new
 ```
 
 The [modal Dict](https://modal.com/docs/reference/modal.Dict) has a different context than the other stores. For it to
-work, we must give it the stub at creation time and the handler at runtime.
+work, we must give it the stub at creation time and the app at runtime.
 
-Currently, modal only implemented *contains*, *put*, *get*, *update*, *len*, *pop*. For the sake of consistency, we
-implemented the keys with another metadata dict and the *keys*, *values*, *items* and the search APIs naively, which
-makes them slow. It is recommended to use it mostly as cache.
+Currently, modal implemented only *contains*, *put*, *get*, *update*, *len*, and *pop*.    
+For the sake of consistency, we implemented the *keys*, *values*, *items* and the search APIs naively with another metadata modal.Dict, which
+makes them slow. 
+
+It is recommended to use it mostly as cache.
 
 The ModalStore is initiated with a stub outside the runtime with data optionally, and cannot be updated outside the app
-by design. Within the runtime, the handler is passed to the store to be able to update the data.
+by design. 
+
+Within the runtime, the handler is passed to the store to be able to update the data.
 
 ```python 
 import modal

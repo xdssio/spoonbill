@@ -13,5 +13,6 @@ If you need persistence in the cloud with realtime search, use one of the Provid
 * Firestore (GCP)
 * DynamoDB (AWS)
 * MongoDB (Wherever it is deployed)
+* modal.Dict (Modal's own key-value store)
 
 If you need very fast realtime, then the RedisStore is the best choice.   
