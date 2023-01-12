@@ -401,12 +401,14 @@ Currently, modal implemented only *contains*, *put*, *get*, *update*, *len*, and
 For the sake of consistency, we implemented the *keys*, *values*, *items* and the search APIs naively with another metadata modal.Dict, which
 makes them slow. 
 
-It is recommended to use it mostly as cache.
+It is recommended to use it mostly as a cache.
 
-The ModalStore is initiated with a stub outside the runtime with data optionally, and cannot be updated outside the app
+The ModalStore is initiated with a **stub** outside the runtime with data optionally and cannot be updated outside the app
 by design. 
 
-Within the runtime, the handler is passed to the store to be able to update the data.
+Within the runtime, the **context app** is passed to the store to be able to update the data.
+
+Within a function, only the **name** of the dict is needed.
 
 ```python 
 import modal
