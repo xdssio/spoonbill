@@ -1,4 +1,3 @@
-import sys
 from spoonbill.datastores import ModalStore
 import modal
 
@@ -11,7 +10,6 @@ store = ModalStore.open(stub=stub, name=name)
 @stub.function(image=image)
 def modal_test(*args, **kwargs):
     store = ModalStore.open(name=name)
-
     store.set('another', 'another')
     assert 'test' in store  # test contains
 
