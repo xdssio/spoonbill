@@ -77,22 +77,22 @@ class KeyValueStore(Strict):
     """
     A base class for a key value store.
     """
-    _app = None
+    _store = None
     strict: bool = False
 
     def __init__(self, store, strict: bool = False):
 
-        self._app = store
+        self._store = store
         self.strict = strict
 
     def __getitem__(self, item):
-        return self.decode_value(self._app[self.encode_key(item)])
+        return self.decode_value(self._store[self.encode_key(item)])
 
     def __setitem__(self, key, value):
-        self._app[self.encode_key(key)] = self.encode_value(value)
+        self._store[self.encode_key(key)] = self.encode_value(value)
 
     def __len__(self):
-        return len(self._app)
+        return len(self._store)
 
     def __iter__(self):
         return iter(self.keys())
@@ -141,7 +141,7 @@ class KeyValueStore(Strict):
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
-        for i, key in enumerate(self._app.keys()):
+        for i, key in enumerate(self._store.keys()):
             if i == limit:
                 break
             key = self.decode_key(key)
@@ -155,7 +155,7 @@ class KeyValueStore(Strict):
                     break
                 yield self.get(key, default)
         else:
-            for i, value in enumerate(self._app.values()):
+            for i, value in enumerate(self._store.values()):
                 if i == limit:
                     break
                 yield value
@@ -163,32 +163,32 @@ class KeyValueStore(Strict):
     def items(self, conditions: dict = None, limit: int = None):
         if conditions is not None and not hasattr(conditions, 'items'):
             conditions = {VALUE: conditions}
-        for key, value in self._scan_match(self._app.items(), conditions, limit):
+        for key, value in self._scan_match(self._store.items(), conditions, limit):
             yield key, value
 
     def pop(self, key, default=None):
-        ret = self._app.pop(self.decode_key(key))
+        ret = self._store.pop(self.decode_key(key))
         if ret is None:
             return default
         return self.decode_value(ret)
 
     def popitem(self):
-        return self.decode_value(self._app.popitem())
+        return self.decode_value(self._store.popitem())
 
     def get(self, key, default=None):
-        ret = self._app.get(self.encode_key(key))
+        ret = self._store.get(self.encode_key(key))
         if ret is None:
             return default
         return self.decode_value(ret)
 
     def set(self, key, value):
-        return self._app.set(self.encode_key(key), self.encode_value(value))
+        return self._store.set(self.encode_key(key), self.encode_value(value))
 
     def delete(self, key):
         return self.pop(key)
 
     def update(self, d):
-        self._app.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
+        self._store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
         return self
 
     def __repr__(self):
