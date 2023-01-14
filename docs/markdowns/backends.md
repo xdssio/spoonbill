@@ -290,3 +290,50 @@ store = CosmosDBStore.open(database='db',
                            credential='credential')
 ```
 
+## [Modal.com](https://modal.com/home)
+
+Requirements:
+
+```
+pip install modal-client
+modal token new
+```
+
+The [modal Dict](https://modal.com/docs/reference/modal.Dict) has a different context than the other stores. For it to
+work, we must give it the stub at creation time and the app at runtime.
+
+Currently, modal implemented only *contains*, *put*, *get*, *update*, *len*, and *pop*.    
+For the sake of consistency, we implemented the *keys*, *values*, *items* and the search APIs naively with another metadata modal.Dict, which
+makes them slow. 
+
+It is recommended to use it mostly as a cache.
+
+The ModalStore is initiated with a **stub** outside the runtime with data optionally and cannot be updated outside the app
+by design. 
+
+Within the runtime, the **context app** is passed to the store to be able to update the data.
+
+Within a function, only the **name** of the dict is needed.
+```python 
+import modal
+from spoonbill.datastores import ModalStore
+
+image = modal.Image.debian_slim().pip_install("spoonbill-framework")
+
+name = "data" 
+stub = modal.Stub("app name", **kwargs)
+# with stub
+store = ModalStore.open(name=name, stub=stub, data={"key": "value"}) # data is optional
+
+@stub.function(image=image)
+def foo():
+  # in function
+  store = ModalStore.open(name=name) 
+
+if __name__ == "__main__":
+    with stub.run() as app:
+      # in stub.run context
+      store = ModalStore.open(name=name, app=app) 
+``` 
+
+
