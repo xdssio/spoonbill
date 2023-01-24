@@ -1,5 +1,5 @@
 from tempfile import TemporaryDirectory
-from spoonbill.datastores import FilesystemStore, InMemoryStore
+from spoonbill.keyvalues import FilesystemStore, InMemoryStore
 import pytest
 
 

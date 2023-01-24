@@ -1,4 +1,4 @@
-from spoonbill.datastores import LmdbStore
+from spoonbill.keyvalues import LmdbStore
 from tempfile import TemporaryDirectory
 
 

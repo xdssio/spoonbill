@@ -1,4 +1,4 @@
-from spoonbill.datastores import CosmosDBStore
+from spoonbill.keyvalues import CosmosDBStore
 import time
 import pytest
 

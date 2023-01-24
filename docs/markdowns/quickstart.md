@@ -7,7 +7,7 @@
 ## Usage
 
 ```python
-from spoonbill.datastores import InMemoryStore
+from spoonbill.keyvalues import InMemoryStore
 
 store = InMemoryStore()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 store["key"] = "value"
@@ -33,7 +33,7 @@ store.load("path/to/file")
 **Searches** are supported when using `strict=True`.
 
 ```python
-from spoonbill.datastores import InMemoryStore
+from spoonbill.keyvalues import InMemoryStore
 
 store = InMemoryStore(strict=True)
 
@@ -63,9 +63,9 @@ store.items(conditions={'a': '1', 'b': 1}, limit=10)
 When using `strict=False` we can save an object with any key, but we lose the ability to search.
 
 ```python
-from spoonbill.datastores import RedisStore
+from spoonbill.keyvalues import RedisDict
 
-store = RedisStore(strict=False)
+store = RedisDict(strict=False)
 store['function'] = lambda x: x + 1
 store['function'](1) == 2
 ```

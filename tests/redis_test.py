@@ -1,20 +1,25 @@
+import contextlib
+from dataclasses import dataclass
+
+import redis_om.model.model
+from dataclasses_json import dataclass_json
 from tempfile import TemporaryDirectory
 
 import redis
 import pytest
 import pathlib
-from spoonbill.datastores import RedisStore
+from spoonbill.keyvalues import RedisDict
 
 
 def test_redis_from_connection():
-    store = RedisStore.from_connection('localhost', 6379, 1, strict=False)
+    store = RedisDict.from_connection('localhost', 6379, 1, strict=False)
     store[1] = 1
     assert store[1] == 1
     store._flush()
 
 
 def test_redis_open():
-    store = RedisStore.open('redis://localhost:6379/1')
+    store = RedisDict.open('redis://localhost:6379/1')
 
     store[1] = 1
     assert store[1] == 1
@@ -24,7 +29,7 @@ def test_redis_open():
 
 
 def test_redis_dict():
-    store = RedisStore.open('redis://localhost:6379/1', strict=False)
+    store = RedisDict.open('redis://localhost:6379/1', strict=False)
     store._flush()
     store['test'] = 'test'
     assert len(store) == 1
@@ -63,7 +68,7 @@ def test_redis_dict():
 
 
 def test_redis_strict():
-    store = RedisStore.open('redis://localhost:6379/1', strict=True)
+    store = RedisDict.open('redis://localhost:6379/1', strict=True)
     store._flush()
     store[1] = 1
     assert '1' in store
@@ -80,9 +85,44 @@ def test_redis_strict():
 @pytest.mark.skip("Experimental")
 def test_redis_save_load():
     tmpdir = TemporaryDirectory()
-    store = RedisStore.open('redis://localhost:6379/1', strict=True)
+    store = RedisDict.open('redis://localhost:6379/1', strict=True)
     store.update({str(i): i for i in range(10000)})
     other_path = tmpdir.name + '/cloud.db'
     store.save(other_path)
     store._flush()
     assert pathlib.Path(other_path).is_file()
+
+
+# def test_redis_document_store():
+
+
+# def test_redis_json():
+#     @dataclass_json
+#     @dataclass
+#     class User:
+#         id: int
+#         name: str
+#         age: int
+#     import redis
+#     import json
+#
+#     User(1,'1',1).to_json()
+#     store = RedisDict(store=redis.StrictRedis.from_url('redis://localhost:6379/1'))
+#     store._flush()
+#
+#     data = {
+#         'foo': 'bar',
+#         'ans': 42
+#     }
+#
+#     r = redis.StrictRedis()
+#     r.execute_command('JSON.SET', 'object', '.', json.dumps(data))
+#     r.delete('object')
+#     reply = json.loads(r.execute_command('JSON.GET', 'object'))
+#
+#
+#
+#     store._store.json().set(name='user', path='$', obj='"user"')
+#     doc = r.json().get('doc', '$')
+#     dog = r.json().get('doc', '$.dog')
+#     scientific_name = r.json().get('doc', '$..scientific-name')

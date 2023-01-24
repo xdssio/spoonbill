@@ -1,4 +1,4 @@
-from spoonbill.datastores import Firestore
+from spoonbill.keyvalues import Firestore
 
 
 def test_firestore_non_strict():

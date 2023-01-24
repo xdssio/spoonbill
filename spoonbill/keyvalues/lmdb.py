@@ -3,7 +3,7 @@ import contextlib
 import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
-from spoonbill.datastores import ContextStore
+from spoonbill.keyvalues import ContextStore
 from spoonbill.filesystem import FileSystem
 
 
@@ -34,7 +34,7 @@ class LmdbStore(ContextStore):
     """
     An LMDB key-value store based on [lmdb-python-dbm](https://github.com/Dobatymo/lmdb-python-dbm).
 
-    This is ideal for lists or datastores which either need persistence, are too big to fit in memory or both.
+    This is ideal for lists or keyvalues which either need persistence, are too big to fit in memory or both.
     This is a Python DBM interface style wrapper around [LMDB](http://www.lmdb.tech/doc/) (Lightning Memory-Mapped Database).
     It uses the existing lower level Python bindings [py-lmdb](https://lmdb.readthedocs.io/en/release/).
     This is especially useful on Windows, where otherwise dbm.dumb is the default dbm database.

@@ -18,7 +18,7 @@ description = "A lightweight, universal interface for Key-Values data stores"
 readme = "README.md"
 
 [project.optional-dependencies]
-redis = ["redis"]
+redis = ["redis", "redis-om"]
 lmdbm = ["lmdbm"]
 pysos = ["pysos"]
 safetensors = ["safetensors"]

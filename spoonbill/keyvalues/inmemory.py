@@ -4,7 +4,7 @@ import re
 from typing import Sequence
 
 import cloudpickle
-from spoonbill.datastores import KeyValueStore, KEY, VALUE
+from spoonbill.keyvalues import KeyValueStore, KEY, VALUE
 
 
 class InMemoryStore(KeyValueStore):
@@ -50,7 +50,7 @@ class InMemoryStore(KeyValueStore):
     @classmethod
     def open(self, path=None, strict=True, *args, **kwargs):
         """
-        This is a dummy method to make the API consistent with other datastores
+        This is a dummy method to make the API consistent with other keyvalues
         :param args:
         :param kwargs:
         :return:

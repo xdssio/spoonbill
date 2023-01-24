@@ -2,7 +2,7 @@ import typing
 import logging
 import warnings
 
-from spoonbill.datastores import KeyValueStore, KEY, VALUE
+from spoonbill.keyvalues import KeyValueStore, KEY, VALUE
 import boto3
 import decimal
 import botocore

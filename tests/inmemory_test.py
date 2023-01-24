@@ -1,6 +1,6 @@
 from tempfile import TemporaryDirectory
-
-from spoonbill.datastores import InMemoryStore, FilesystemStore
+from dataclasses import dataclass
+from spoonbill.keyvalues import InMemoryStore, FilesystemStore
 
 
 def test_dict_strict():
@@ -75,3 +75,17 @@ def test_inmemory_ordereddict():
     store = InMemoryStore.open(OrderedDict())
     store.update({key: key for key in range(1000)})
     assert list(store.keys()) == list(range(1000))
+
+
+def test_inmemory_dataclass():
+    @dataclass
+    class User:
+        id: int
+        name: str
+        age: int
+
+    user = User(0, 'a', 12)
+    store = InMemoryStore.open()
+    store[user.id] = user
+    store[user.id].age = 13
+    assert store.get(user.id).age == 13

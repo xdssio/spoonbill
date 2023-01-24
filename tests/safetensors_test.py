@@ -1,5 +1,5 @@
 from tempfile import TemporaryDirectory
-from spoonbill.datastores.safetensors import SafetensorsStore, serialize, deserialize, SafetensorsInMemoryStore, \
+from spoonbill.keyvalues.safetensors import SafetensorsStore, serialize, deserialize, SafetensorsInMemoryStore, \
     SafetensorsLmdbStore
 
 import pytest

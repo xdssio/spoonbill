@@ -9,7 +9,7 @@ running infrastructure locally.
 Example:
 
 ```python
-from spoonbill.datastores import DynamoDBStore, InMemoryStore
+from spoonbill.keyvalues import DynamoDBStore, InMemoryStore
 import os
 
 environment = os.getenv("environment", "test")
@@ -29,7 +29,7 @@ Simple Example
 ```python
 import numpy as np
 import pandas as pd
-from spoonbill.datastores import DynamoDBStore
+from spoonbill.keyvalues import DynamoDBStore
 
 df = pd.DataFrame({'user': [1, 2, 3]})
 feature_store = DynamoDBStore.open("features table")  # {1: {"age":20:, "sex":female",...}}
@@ -53,7 +53,7 @@ df[['age', 'sex']] = df.apply(get_user_details, axis=1)
 
 ```python
 
-from spoonbill.datastores import RedisStore, FilesystemStore
+from spoonbill.keyvalues import RedisDict, FilesystemStore
 import time
 
 
@@ -61,7 +61,7 @@ class Model:
 
     def __init__(self):
         self.version = 123
-        self.versions = RedisStore.open("redis://model_versions")
+        self.versions = RedisDict.open("redis://model_versions")
         self.models = FilesystemStore.open("s3://models/")  # can also use a faster store if needed
         self._model = self.models.get(self.version)
 
@@ -99,10 +99,10 @@ Let's say we have a model that predicts the probability of a user watching a vid
 ```python
 import numpy as np
 from datetime import datetime as dt
-from spoonbill.datastores import RedisStore, SafetensorsStore, FilesystemStore
+from spoonbill.keyvalues import RedisDict, SafetensorsStore, FilesystemStore
 
 # Whenever a user watches a video, we update the last 3 movies list.
-recently_watched_store = RedisStore.open("redis://last_3_movies")  # {1: [1, 2, 3]}
+recently_watched_store = RedisDict.open("redis://last_3_movies")  # {1: [1, 2, 3]}
 video_embedding = SafetensorsStore.open("video_embedding.db")  # {1: [0.1, 0.2, 0.3]}
 models = FilesystemStore.open("s3://models/22-02-2022/")  # {"v1": SuperNN(),...}
 

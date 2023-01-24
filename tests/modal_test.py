@@ -1,4 +1,4 @@
-from spoonbill.datastores import ModalStore
+from spoonbill.keyvalues import ModalStore
 import modal
 
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")

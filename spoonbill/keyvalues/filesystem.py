@@ -1,4 +1,4 @@
-from spoonbill.datastores import KeyValueStore, InMemoryStore
+from spoonbill.keyvalues import KeyValueStore, InMemoryStore
 from fsspec import AbstractFileSystem, get_filesystem_class
 from fsspec.implementations.cached import SimpleCacheFileSystem
 import typing

@@ -1,7 +1,7 @@
 import pathlib
 import re
 import shutil
-from spoonbill.datastores import KeyValueStore, VALUE
+from spoonbill.keyvalues import KeyValueStore, VALUE
 
 
 def is_cloud_url(path):

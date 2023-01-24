@@ -1,6 +1,6 @@
 from tempfile import TemporaryDirectory
 
-from spoonbill.datastores import MongoDBStore
+from spoonbill.keyvalues import MongoDBStore
 
 
 def test_mongodb_strict():

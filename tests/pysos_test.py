@@ -1,4 +1,4 @@
-from spoonbill.datastores import PysosStore
+from spoonbill.keyvalues import PysosStore
 from tempfile import TemporaryDirectory
 
 

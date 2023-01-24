@@ -2,14 +2,14 @@ import os
 import cloudpickle
 import pysos
 
-from spoonbill.datastores import KeyValueStore
+from spoonbill.keyvalues import KeyValueStore
 
 
 class PysosStore(KeyValueStore):
     """
     pySOS: Simple Objects Storage
 
-    This is ideal for lists or datastores which either need persistence, are too big to fit in memory or both.
+    This is ideal for lists or keyvalues which either need persistence, are too big to fit in memory or both.
 
     There are existing alternatives like shelve, which are very good too. There main difference with pysos is that:
 

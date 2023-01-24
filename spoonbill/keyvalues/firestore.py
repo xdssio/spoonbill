@@ -1,6 +1,6 @@
 import typing
 
-from spoonbill.datastores import KeyValueStore, VALUE, KEY
+from spoonbill.keyvalues import KeyValueStore, VALUE, KEY
 from google.cloud import firestore
 import re
 

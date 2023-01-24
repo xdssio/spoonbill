@@ -1,4 +1,4 @@
-from spoonbill.datastores import DynamoDBStore
+from spoonbill.keyvalues import DynamoDBStore
 import pytest
 
 

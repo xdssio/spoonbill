@@ -1,27 +1,27 @@
 import time
 import typing
-
 import redis
 
-from spoonbill.datastores import KeyValueStore, Strict
+from spoonbill.keyvalues import KeyValueStore, Strict
 
 REDIS_DEFAULT_HOST = 'localhost'
 REDIS_DEFAULT_PORT = 6379
 REDIS_DEFAULT_DB = 1
 
 
-class RedisStore(KeyValueStore, Strict):
+class RedisDict(KeyValueStore, Strict):
     """
     Redis Key-value store
     """
 
-    def __init__(self, store: typing.Any, strict: bool = False):
+    def __init__(self, store: typing.Any, strict: bool = False, **kwargs):
         """
 
         :param store: The redis.Redis client
         :param strict: If False, all keys and values are encoded and decoded using cloudpickle - This make the RedisDict behave like a normal dict
                 If True, all keys and values are encoded and decoded using str as default with redis - This make reading, writing and scaning faster
                 default: False
+        :param kwargs: For consistency with other stores
         """
         self._store = store
         self.strict = strict
@@ -74,10 +74,6 @@ class RedisStore(KeyValueStore, Strict):
 
     def set(self, key, value):
         return self._store.set(self.encode_key(key), self.encode_value(value))
-
-
-
-
 
     def update(self, d):
         pipeline = self._store.pipeline()
@@ -147,7 +143,7 @@ class RedisStore(KeyValueStore, Strict):
     @classmethod
     def open(cls, url: str, strict: bool = False, **kwargs):
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisStore(store=redis.Redis.from_url(url, **kwargs), strict=strict)
+        return RedisDict(store=redis.Redis.from_url(url, **kwargs), strict=strict)
 
     @classmethod
     def from_connection(cls, host: str = REDIS_DEFAULT_HOST, port: int = REDIS_DEFAULT_PORT,
@@ -155,9 +151,9 @@ class RedisStore(KeyValueStore, Strict):
 
         if db is None:
             store = redis.Redis(host=host, port=port, db=0, decode_responses=True)
-            db = len(RedisStore._databases_names(store))  # TODO test this
+            db = len(RedisDict._databases_names(store))  # TODO test this
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
-        return RedisStore(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=strict)
+        return RedisDict(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=strict)
 
     @property
     def _backup_path(self):

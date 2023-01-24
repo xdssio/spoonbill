@@ -59,7 +59,7 @@ All the classes have the same interface, so you can use them interchangeably.
 ## APIs
 
 ```python
-from spoonbill.datastores import InMemoryStore
+from spoonbill.keyvalues import InMemoryStore
 
 store = InMemoryStore()
 store["key"] = "value"
@@ -87,7 +87,7 @@ store.load('path')
 When using `strict=True` we can use some advanced features of the backend. specifically for searches.
 
 ```python
-from spoonbill.datastores import InMemoryStore
+from spoonbill.keyvalues import InMemoryStore
 
 store = InMemoryStore()
 store.keys(pattern="*", limit=10)  # scan keys to a pattern
@@ -126,7 +126,7 @@ case, to have a common interface which includes the search operations.
   using [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=s3#other-known-implementations).
 
 ```python
-from spoonbill.datastores import InMemoryStore
+from spoonbill.keyvalues import InMemoryStore
 
 store = InMemoryStore()  # InMemoryDict.open() or InMemoryDict.open('path/to/file') from file
 
@@ -150,7 +150,7 @@ Requirements:
 ```pip install lmdbm```
 
 ```python
-from spoonbill.datastores import LmdbStore
+from spoonbill.keyvalues import LmdbStore
 
 store = LmdbStore.open('tmp.db')
 ```
@@ -174,7 +174,7 @@ Requirements:
 ```pip install pysos```
 
 ```python
-from spoonbill.datastores import PysosStore
+from spoonbill.keyvalues import PysosStore
 
 store = PysosStore.open('tmp.db')
 ```
@@ -186,7 +186,7 @@ objects — anything that the pickle module can handle. This includes most class
 objects containing lots of shared sub-objects. The keys are ordinary strings.
 
 ```python
-from spoonbill.datastores import ShelveStore
+from spoonbill.keyvalues import ShelveStore
 
 store = ShelveStore.open('tmp.db')
 ```
@@ -201,7 +201,7 @@ Requirements:
 * if you use tensorflow, torch, numpy or flax, youll need to install them too... duh.
 
 ```python
-from spoonbill.datastores import SafetensorsStore
+from spoonbill.keyvalues import SafetensorsStore
 import numpy as np
 
 data = {'weight1': np.array([1, 2, 3]), 'weight2': np.array([4, 5, 6])}
@@ -215,7 +215,7 @@ store['weight1'] = 1  # raises an error
 If you must be able to have a mutable store, you can use the `SafetensorsInMemoryStore`.
 
 ```python
-from spoonbill.datastores import SafetensorsInMemoryStore, SafetensorsStore
+from spoonbill.keyvalues import SafetensorsInMemoryStore, SafetensorsStore
 import numpy as np
 
 store = SafetensorsInMemoryStore(framework=SafetensorsStore.NUMPY)
@@ -229,7 +229,7 @@ LmdbStore backend
 * ```pip install lmdbm```
 
 ```python
-from spoonbill.datastores import SafetensorsLmdbStore, SafetensorsStore
+from spoonbill.keyvalues import SafetensorsLmdbStore, SafetensorsStore
 import numpy as np
 
 store = SafetensorsLmdbStore(path='tmp.db', framework=SafetensorsStore.NUMPY)
@@ -251,7 +251,7 @@ For faster applications with cloud persistence, you can use InMemoryStore/LmdbSt
 updates.
 
 ```python
-from spoonbill.datastores import FilesystemStore
+from spoonbill.keyvalues import FilesystemStore
 
 # set strict to True to use redis with its default behaviour which turns keys and values to strings
 store = FilesystemStore.open("s3://bucket/path/to/store")
@@ -271,17 +271,17 @@ Requirements:
 ```pip install redis```
 
 ```python
-from spoonbill.datastores import RedisStore
+from spoonbill.keyvalues import RedisDict
 
 # set strict to True to use redis with its default behaviour which turns keys and values to strings
-store = RedisStore.open("redis://localhost:6379/1")
+store = RedisDict.open("redis://localhost:6379/1")
 store[1] = 1
 assert store[1] == store["1"] == "1"
 
 assert list(store.keys('1*')) == ['111', '1', '11']  # redis turn every key to string
 assert list(store.scan('1*')) == ['111', '1', '11']  # slower but non-blocking
 
-store = RedisStore.open("redis://localhost:6379/1", strict=False)
+store = RedisDict.open("redis://localhost:6379/1", strict=False)
 store[1] = lambda x: x + 1  # anything goes using cloudpickle
 assert store[1](1) == 2
 ```
@@ -297,7 +297,7 @@ Recommended using with `strict=True` to enjoy all the benefits of backends inclu
 Searches API Example:
 
 ```python
-from spoonbill.datastores import MongoDBStore
+from spoonbill.keyvalues import MongoDBStore
 
 store = MongoDBStore()
 store.keys(pattern="*", limit=10)  # scan keys to a pattern
@@ -313,7 +313,7 @@ Requirements:
 ```pip install pymongo```
 
 ```python
-from spoonbill.datastores import MongoDBStore
+from spoonbill.keyvalues import MongoDBStore
 
 store = MongoDBStore.open(uri='mongodb://localhost:27017/')
 ```
@@ -355,7 +355,7 @@ pip install --upgrade google-cloud-firestore
 ```
 
 ```python
-from spoonbill.datastores import Firestore
+from spoonbill.keyvalues import Firestore
 
 # this rest of the credentials are picked up from the file in the GOOGLE_APPLICATION_CREDENTIALS environment variable
 store = Firestore.open(table_name="my-collection")
@@ -377,7 +377,7 @@ Requirements:
 ```pip install azure-cosmos```
 
 ```python
-from spoonbill.datastores import CosmosDBStore
+from spoonbill.keyvalues import CosmosDBStore
 
 store = CosmosDBStore.open(database='db',
                            container='container',
@@ -438,7 +438,7 @@ if __name__ == "__main__":
 Mock data on local dictionary and cloud store in dev or production.
 
 ```python
-from spoonbill.datastores import DynamoDBStore, InMemoryStore
+from spoonbill.keyvalues import DynamoDBStore, InMemoryStore
 import os
 
 environment = os.getenv("environment", "test")
@@ -454,16 +454,16 @@ else:
 Real-time feature engineering with any backend
 
 ```python
-from spoonbill.datastores import RedisStore
+from spoonbill.keyvalues import RedisDict
 import pandas as pd
 
 df = pd.DataFrame({'user': [1, 2, 3]})
-feature_store = RedisStore.open("features table")  # {1: {"age":20:, "sex":female",...}}
+feature_store = RedisDict.open("features table")  # {1: {"age":20:, "sex":female",...}}
 
 
 def get_user_details(x):
-    default = {"age": 25, "sex": "female"}
-    return pd.Series(feature_store.get(x['user'], default).values())
+  default = {"age": 25, "sex": "female"}
+  return pd.Series(feature_store.get(x['user'], default).values())
 
 
 df[['age', 'sex']] = df.apply(get_user_details, axis=1)

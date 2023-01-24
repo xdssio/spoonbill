@@ -1,6 +1,6 @@
 import pytest
 import pickle
-from spoonbill.datastores import ShelveStore
+from spoonbill.keyvalues import ShelveStore
 from tempfile import TemporaryDirectory
 
 

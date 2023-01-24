@@ -1,6 +1,6 @@
 import contextlib
 
-from spoonbill.datastores import ContextStore, InMemoryStore, VALUE
+from spoonbill.keyvalues import ContextStore, InMemoryStore, VALUE
 
 
 def get_framework_save_file(framework):
@@ -179,7 +179,7 @@ class SafetensorsInMemoryStore(InMemoryStore):
 
 
 with contextlib.suppress(ImportError):
-    from spoonbill.datastores import LmdbStore
+    from spoonbill.keyvalues import LmdbStore
 
 
     class SafetensorsLmdbStore(LmdbStore):

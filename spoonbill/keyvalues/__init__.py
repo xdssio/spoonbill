@@ -1,5 +1,7 @@
 import typing
 import contextlib
+import abc
+
 import cloudpickle
 import re
 from spoonbill.filesystem import FileSystem
@@ -328,7 +330,10 @@ from .inmemory import InMemoryStore
 from .shelve import ShelveStore
 
 with contextlib.suppress(ImportError):
-    from .redis import RedisStore
+    from .redis import RedisDict
+
+with contextlib.suppress(ImportError):
+    from .redis import RedisDocumentStore
 
 with contextlib.suppress(ImportError):
     from .lmdb import LmdbStore
