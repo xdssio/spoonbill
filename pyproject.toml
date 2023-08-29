@@ -28,6 +28,7 @@ gcp = ["google-cloud-firestore"]
 azure = ["azure-cosmos"]
 dev = ["pytest", "sphinx", "sphinx-rtd-theme", "sphinx-autodoc-typehints", "sphinxcontrib-napoleon", "sphinxcontrib-apidoc"]
 modal = ["modal-client"]
+unqlite = ["unqlite"]
 
 [tool.setuptools]
 packages = ["spoonbill"]
