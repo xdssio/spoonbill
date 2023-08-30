@@ -17,14 +17,16 @@ class UnQLiteStore(KeyValueStore):
 
     """
 
-    def __init__(self, store: UnQLite() = None, strict: bool = True):
+    def __init__(self, store: UnQLite = None, strict: bool = True):
         """
         :param store: a dictionary to use as the store
         :param strict: if False, encode and decode keys and values with cloudpickle
         """
-        self._store = store or UnQLite()
+        if store is None:
+            store = UnQLite()
+        self._store = store
         self.strict = strict
-        self.as_string = False
+        self.as_string = not strict
 
     @classmethod
     def from_dict(cls, d: dict, strict=True):
@@ -52,7 +54,7 @@ class UnQLiteStore(KeyValueStore):
         return ret
 
     @classmethod
-    def open(self, path:str=None, strict=True, *args, **kwargs):
+    def open(cls, path: str = None, strict=True, *args, **kwargs):
         """
         This is a dummy method to make the API consistent with other datastores
         :param args:
@@ -73,18 +75,26 @@ class UnQLiteStore(KeyValueStore):
                 self._store[self.encode_key(key)] = self.encode_value(value)
         return self
 
-    def encode(self, value):
-        """Encode a value to a bytes """
-        return cloudpickle.dumps(value)
-
-    def decode(self, value):
-        if value is not None:
-            if value == b'\x80\x05K':
-                return 0
-            if self._is_encoded(value):
-                return cloudpickle.loads(value)
-            return value
-
     @classmethod
     def load(cls, path, **kwargs):
         return cls.open(path=path, **kwargs)
+
+    def encode(self, value):
+        """Encode a value to a string.
+        Note were using the str instead of encoding to bytes because it works best with
+        numbers too without creating issues with different encodings.
+        """
+        encoded = cloudpickle.dumps(value)
+        return str(encoded)
+
+    def decode(self, value):
+        if value is not None:
+            if self._is_encoded(value):
+                value = eval(value)
+                value = cloudpickle.loads(value)
+                return value
+            return value
+
+    def _is_encoded(self, value):
+        return  str(value)[:3] in ('b"\\', "b'\\", 'b"b', "b'b", 'b"b', "b'b")
+

@@ -359,3 +359,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .modal import ModalStore
+
+with contextlib.suppress(ImportError):
+    from .unqlite import UnQLiteStore
