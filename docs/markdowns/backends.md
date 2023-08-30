@@ -361,6 +361,7 @@ and improve performance for any use case.
 
 * If you care a lot about performance and you're willing to miss some feature like the __len___ method,
   use [RocksDict](https://github.com/Congyuwang/RocksDict) directly.
+* Only one instance can be open at a time for threading locking issues.
 * The save and load is a bit different from the other stores. It is not a dump and load of the data, save to a file and
   ingest back.
 * Requirements:   
@@ -371,6 +372,35 @@ from spoonbill.datastores import SpeedbStore
 
 path = 'directory'
 store = SpeedbStore.open(path)
+
+store.save('file.sst')
+# load 
+store.ingest('file.sst')
+
+```
+
+## [RocksDB](https://github.com/facebook/rocksdb)
+
+RocksDB is developed and maintained by Facebook Database Engineering Team. It is built on earlier work on LevelDB by Sanjay Ghemawat (sanjay@google.com) and Jeff Dean (jeff@google.com)
+
+This code is a library that forms the core building block for a fast key-value server, especially suited for storing data on flash drives. It has a Log-Structured-Merge-Database (LSM) design with flexible tradeoffs between Write-Amplification-Factor (WAF), Read-Amplification-Factor (RAF) and Space-Amplification-Factor (SAF). It has multi-threaded compactions, making it especially suitable for storing multiple terabytes of data in a single database.
+
+
+
+* If you care a lot about performance and you're willing to miss some feature like the __len___ method,
+  use [RocksDict](https://github.com/Congyuwang/RocksDict) directly.
+* Only one instance can be open at a time for threading locking issues.
+* The save and load is a bit different from the other stores. It is not a dump and load of the data, save to a file and
+  ingest back.
+
+* Requirements:   
+  ```pip install rocksdict```
+
+```python
+from spoonbill.datastores import RocksDBStore
+
+path = 'directory'
+store = RocksDBStore.open(path)
 
 store.save('file.sst')
 # load 

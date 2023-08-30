@@ -1,19 +1,23 @@
 from spoonbill.datastores.rdict import RdictBase
-from speedict import Rdict, Options, WriteBatch, SstFileWriter
+from rocksdict import Rdict, Options, WriteBatch, SstFileWriter
 
 
-class SpeedbStore(RdictBase):
+class RocksDBStore(RdictBase):
     """
     A key-value store based on [speedict](https://github.com/speedb-io/speedb)
     """
 
     @classmethod
-    def open(cls, path: str, strict=True, *args, **kwargs):
+    def open(cls, path: str, strict=True, name: str = None, *args, **kwargs):
         store = Rdict(path, options=Options(**kwargs))
-        return SpeedbStore(store, strict=strict)
+        return RocksDBStore(store, strict=strict, name=name)
+
+    @property
+    def names(self):
+        return Rdict.list_cf(self._store.path())
 
     def _list_cf(self):
-        return Rdict.list_cf(self._store.path())
+        return
 
     def _flush(self):
         path = self._store.path()

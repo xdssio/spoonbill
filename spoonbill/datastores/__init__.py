@@ -365,3 +365,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .speedb import SpeedbStore
+
+with contextlib.suppress(ImportError):
+    from .rocksdb import RocksDBStore

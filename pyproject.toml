@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "spoonbill-framework"
-version = "0.0.1a6"
+version = "0.0.1a7"
 license = "LICENSE"
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -34,6 +34,8 @@ azure = ["azure-cosmos"]
 dev = ["pytest", "sphinx", "sphinx-rtd-theme", "sphinx-autodoc-typehints", "sphinxcontrib-napoleon", "sphinxcontrib-apidoc"]
 modal = ["modal-client"]
 unqlite = ["unqlite"]
+rocksdb = ["rocksdict"]
+speedb = ["speedict"]
 
 [tool.setuptools]
 packages = ["spoonbill"]
