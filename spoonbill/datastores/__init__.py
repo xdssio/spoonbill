@@ -368,3 +368,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .rocksdb import RocksDBStore
+
+with contextlib.suppress(ImportError):
+    from .leveldb import LevelDBStore

@@ -510,6 +510,20 @@ store.ingest('file.sst')
 
 ```
 
+## [LevelDB](https://github.com/google/leveldb)
+
+Requirements:   
+* Install LevelDB on your platform and also 
+```
+pip install plyvel
+# or 
+pip install plyvel-ci
+```
+
+```python
+from spoonbill.datastores import LevelDBStore
+```
+
 ## Use cases
 
 Mock data on local dictionary and cloud store in dev or production.
