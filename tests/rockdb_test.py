@@ -1,10 +1,11 @@
 from tempfile import TemporaryDirectory
 
-from spoonbill.datastores.unqlite import UnQLiteStore
+from spoonbill.datastores import RocksdbStore
 
 
-def test_unqlite_strict():
-    store = UnQLiteStore.open(strict=True)
+def test_rockdb_strict():
+    tmpdir = TemporaryDirectory()
+    store = RocksdbStore.open(tmpdir.name,strict=True)
     store['test'] = b'test'
     assert len(store) == 1
     assert store['test'] == store.get('test') == b'test'
@@ -26,22 +27,22 @@ def test_unqlite_strict():
     assert store == {'test': b'test2', 'another': b'another2'}
 
 
-def test_unqlite_nonstrict():
-    store = UnQLiteStore.open(strict=False)
+def test_rockdb_nonstrict():
+    store = RocksdbStore.open(strict=False)
     store.update({i: i for i in range(11)})
 
     assert len(store) == 11
     assert list(store.values(range(10))) == list(range(10))
     assert len([1 for _ in store]) == 11  # test iterator
 
-    store = UnQLiteStore.open(strict=True)
+    store = RocksdbStore.open(strict=True)
     store.update({i: i for i in range(11)})
     assert [item for item in store.keys(pattern='1+')] == ['1', '10']  # scan looks at keys as strings
 
 
-def test_unqlite_search():
+def test_rockdb_search():
     # problem at self._is_encoded
-    store = UnQLiteStore.open(strict=False)
+    store = RocksdbStore.open(strict=False)
     store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
     store.update({1: 10, 2: 20})
     assert list(store.items(conditions={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
@@ -53,9 +54,9 @@ def test_unqlite_search():
 def test_unqlite_persistence():
     tmpdir = TemporaryDirectory()
     path = tmpdir.name + '/tmp.db'
-    store = UnQLiteStore.open(path)
+    store = RocksdbStore.open(path)
     store['test'] = 'test'
     assert len(store) == 1
 
-    store = UnQLiteStore.load(path)  # equals to open
+    store = RocksdbStore.load(path)  # equals to open
     assert len(store) == 1

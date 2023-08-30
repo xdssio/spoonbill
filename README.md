@@ -446,6 +446,27 @@ from spoonbill.datastores import UnQLiteStore
 
 store = UnQLiteStore.open('tmp.db') # leave empty for in-memory
 ```
+## [Speedb](https://github.com/speedb-io/speedb)
+Requirements
+```pip install speedict```
+
+```python
+
+```
+## RockDB
+
+Requirements - [install](https://python-rocksdb.readthedocs.io/en/latest/installation.html):
+* [Install rockDB](https://github.com/facebook/rocksdb/blob/main/INSTALL.md)
+  * on Mac `brew install rocksdb`
+ 
+```
+pip install rocksdict git+git://github.com/twmht/python-rocksdb.git#egg=python-rocksdb
+```
+
+```python
+```
+
+
 
 ## Use cases
 
