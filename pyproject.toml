@@ -1,23 +1,28 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "spoonbill-framework"
 version = "0.0.1a6"
-license = { file = "LICENSE" }
+license = "LICENSE"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
-dependencies = ["cloudpickle", "fsspec"]
-keywords = ["dict", "key-value", "gcp", "azure", "aws", "s3", "lmdb", "pysos", "redis", "dynamodb", "mongodb", "cosmosdb", "safetensors"]
-requires-python = ">=3.7"
+keywords = ["dict", "key-value", "gcp", "azure", "aws", "s3", "lmdb", "pysos", "redis", "dynamodb", "mongodb", "cosmosdb", "safetensors", "unqlite"]
 description = "A lightweight, universal interface for Key-Values data stores"
 readme = "README.md"
+authors = ["xdssio <jonathan@xdss.io>"]
+packages = [{ include = "spoonbill" }]
 
-[project.optional-dependencies]
+[tool.poetry.dependencies]
+python = "^3.7"
+cloudpickle = "^2.2.0"
+fsspec = "^2022.11.0"
+
+[tool.poetry.extras]
 redis = ["redis"]
 lmdbm = ["lmdbm"]
 pysos = ["pysos"]
@@ -35,23 +40,4 @@ packages = ["spoonbill"]
 
 [project.urls]
 Homepage = "https://github.com/xdssio/spoonbill"
-
-[tool.bumpver]
-current_version = "0.0.1a0"
-version_pattern = "MAJOR.MINOR.PATCH"
-commit_message = "bump version {old_version} -> {new_version}"
-commit = true
-tag = true
-push = true
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = [
-    'current_version = "{version}"',
-]
-"README.md" = [
-    "{version}",
-    "{pep440_version}",
-]
-
-
 
