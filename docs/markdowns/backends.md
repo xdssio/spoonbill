@@ -350,3 +350,30 @@ from spoonbill.datastores import UnQLiteStore
 
 store = UnQLiteStore.open('tmp.db') # leave empty for in-memory
 ```
+
+## [Speedb](https://github.com/speedb-io/speedb)
+
+A first-of-its-kind, community-led key-value storage engine, designed to support modern data sets.
+
+Speedb is a 100% RocksDB compatible, drop-in library, focused on high performance, optimized for modern storage hardware
+and scale, on-premise and in the cloud. We strive to simplify the usability of complex data engines as well as stabilize
+and improve performance for any use case.
+
+* If you care a lot about performance and you're willing to miss some feature like the __len___ method,
+  use [RocksDict](https://github.com/Congyuwang/RocksDict) directly.
+* The save and load is a bit different from the other stores. It is not a dump and load of the data, save to a file and
+  ingest back.
+* Requirements:   
+  ```pip install speedict```
+
+```python
+from spoonbill.datastores import SpeedbStore
+
+path = 'directory'
+store = SpeedbStore.open(path)
+
+store.save('file.sst')
+# load 
+store.ingest('file.sst')
+
+```

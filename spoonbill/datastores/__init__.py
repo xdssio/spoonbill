@@ -362,3 +362,6 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .unqlite import UnQLiteStore
+
+with contextlib.suppress(ImportError):
+    from .speedb import SpeedbStore
