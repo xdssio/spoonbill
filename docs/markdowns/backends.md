@@ -336,7 +336,7 @@ if __name__ == "__main__":
       store = ModalStore.open(name=name, app=app) 
 ``` 
 
-## [UnQlite](https://unqlite.org)([python-bindings](https://github.com/coleifer/unqlite-python))
+## [UnQlite](https://unqlite.org) ([python-bindings](https://github.com/coleifer/unqlite-python))
 
 Read the issue tracker for this database before considering using it. UnQLite has not seen any meaningful development since 2014. It is strongly recommended that you use Sqlite. Sqlite has robust support for json and is actively developed and maintained.    
 
