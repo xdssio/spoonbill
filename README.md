@@ -50,6 +50,50 @@ pip install spoonbill-framework
 * A `strict=False` mode is available to allow for more flexible data types - anything which is cloudpickle-able will
   work including classes and functions.
 
+## Use cases
+
+Mock data on local dictionary and cloud store in dev or production.
+
+```python
+from spoonbill.datastores import DynamoDBStore, InMemoryStore
+import os
+
+environment = os.getenv("environment", "test")
+
+if environment == "test":
+    store = InMemoryStore.open("mock data")
+elif environment == "dev":
+    store = DynamoDBStore.open("dev table")
+else:
+    store = DynamoDBStore.open("prod table")
+```
+
+Real-time feature engineering with any backend
+
+```python
+from spoonbill.datastores import RedisStore
+import pandas as pd
+
+df = pd.DataFrame({'user': [1, 2, 3]})
+feature_store = RedisStore.open("features table")  # {1: {"age":20:, "sex":female",...}}
+
+
+def get_user_details(x):
+    default = {"age": 25, "sex": "female"}
+    return pd.Series(feature_store.get(x['user'], default).values())
+
+
+df[['age', 'sex']] = df.apply(get_user_details, axis=1)
+df
+"""
+   user  age     sex
+0     1   20    male
+1     2   30  female
+2     3   25  female
+"""
+```
+
+
 ## Usage
 
 All the classes have the same interface, so you can use them interchangeably.
@@ -57,7 +101,8 @@ All the classes have the same interface, so you can use them interchangeably.
 * The *strict* argument is used to control if to encode the keys and values with cloudpickle or keep original backend
   behavior. if strict is False, any key and value can be used, otherwise it depends on the backend.
 
-## APIs
+### APIs
+Everthying a dict does plus some searches. 
 
 ```python
 from spoonbill.datastores import InMemoryStore
@@ -537,45 +582,3 @@ store = LevelDBStore.open('directory/')
 
 ```
 
-## Use cases
-
-Mock data on local dictionary and cloud store in dev or production.
-
-```python
-from spoonbill.datastores import DynamoDBStore, InMemoryStore
-import os
-
-environment = os.getenv("environment", "test")
-
-if environment == "test":
-    store = InMemoryStore.open("mock data")
-elif environment == "dev":
-    store = DynamoDBStore.open("dev table")
-else:
-    store = DynamoDBStore.open("prod table")
-```
-
-Real-time feature engineering with any backend
-
-```python
-from spoonbill.datastores import RedisStore
-import pandas as pd
-
-df = pd.DataFrame({'user': [1, 2, 3]})
-feature_store = RedisStore.open("features table")  # {1: {"age":20:, "sex":female",...}}
-
-
-def get_user_details(x):
-    default = {"age": 25, "sex": "female"}
-    return pd.Series(feature_store.get(x['user'], default).values())
-
-
-df[['age', 'sex']] = df.apply(get_user_details, axis=1)
-df
-"""
-   user  age     sex
-0     1   20    male
-1     2   30  female
-2     3   25  female
-"""
-```

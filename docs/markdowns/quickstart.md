@@ -6,6 +6,12 @@
 
 ## Usage
 
+Any data store acts like a python dictionary, only the backend is different.   
+Some backends have special features, like search, or persistence.   
+When a search feature is missing, we implemented a naive solution instead.   
+We use the _strict_ flag to indicate if to use the backend natively. If False, we
+use [cloudpickle](https://github.com/cloudpipe/cloudpickle) on each key and value.
+
 ```python
 from spoonbill.datastores import InMemoryStore
 
@@ -52,10 +58,10 @@ MongoDB example:
 from spoonbill.datastors import MongoDBStore
 
 store = MongoDBStore(uri="mongodb://...", strict=True)
-store["key1"] = {"a":'1', "b":2}
-store["key2"] = {"a":'1', "b":3}
-store.keys(pattern="*", limit=10) 
-store.values(keys=['key1', 'key2']) 
+store["key1"] = {"a": '1', "b": 2}
+store["key2"] = {"a": '1', "b": 3}
+store.keys(pattern="*", limit=10)
+store.values(keys=['key1', 'key2'])
 store.items(conditions={'a': '1', 'b': 1}, limit=10)
 
 ```
