@@ -370,8 +370,7 @@ and improve performance for any use case.
 ```python
 from spoonbill.datastores import SpeedbStore
 
-path = 'directory'
-store = SpeedbStore.open(path)
+store = SpeedbStore.open('directory/')
 
 store.save('file.sst')
 # load 
@@ -399,11 +398,33 @@ This code is a library that forms the core building block for a fast key-value s
 ```python
 from spoonbill.datastores import RocksDBStore
 
-path = 'directory'
-store = RocksDBStore.open(path)
+store = RocksDBStore.open('directory/')
 
 store.save('file.sst')
 # load 
 store.ingest('file.sst')
+
+```
+
+
+## [LevelDB](https://github.com/google/leveldb)
+LevelDB is a fast key-value storage library written at Google that provides an ordered mapping from string keys to string values.
+
+Important notes:
+* In strict=True, LevelDB Only handles bytes, so you need to encode your data before saving it strict=False will do that for you. 
+    
+
+Requirements:   
+* Install LevelDB on your platform and also 
+```
+pip install plyvel
+# or 
+pip install plyvel-ci
+```
+
+```python
+from spoonbill.datastores import LevelDBStore
+
+store = LevelDBStore.open('directory/') 
 
 ```

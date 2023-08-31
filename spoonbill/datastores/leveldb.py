@@ -5,6 +5,8 @@ import plyvel
 
 class LevelDBStore(KeyValueStore):
 
+    NONE = '__NONE__'
+
     @classmethod
     def open(self, path: str, strict: bool = True, *args, **kwargs):
         db = plyvel.DB(path, create_if_missing=True)
@@ -15,6 +17,7 @@ class LevelDBStore(KeyValueStore):
         self.options = options or {}
         self._size = self._count_all()
         self.name = name
+        self.as_string = False
 
     def keys(self, pattern: str = None, limit: int = None, *args, **kwargs):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
@@ -32,12 +35,27 @@ class LevelDBStore(KeyValueStore):
         return count
 
     def __setitem__(self, key, value):
+        if value is None:
+            value = LevelDBStore.NONE
+        key = self.encode_key(key)
+        value = self.encode_value(value)
         if key not in self._store:
             self._size += 1
         return self._store.put(key, value)
 
     def __getitem__(self, item):
         return self.decode_value(self._store.get(self.encode_key(item)))
+
+    def decode_value(self, value):
+
+        if self.strict:
+            if value == LevelDBStore.NONE:
+                return None
+            return value
+        decoded = self.decode(value)
+        if decoded == LevelDBStore.NONE:
+            return None
+        return decoded
 
     def set(self, key, value):
         self[key] = value
@@ -46,13 +64,14 @@ class LevelDBStore(KeyValueStore):
         return self.pop(key, None)
 
     def __contains__(self, item):
-        return self.get(item) is not None
+        return self._store.get(self.encode_key(item)) is not None
 
     def pop(self, key, default=None):
         value = default
         if key in self:
             self._size -= 1
             value = self.get(key)
+        key = self.encode_key(key)
         self._store.delete(key)
         return value
 
@@ -62,7 +81,7 @@ class LevelDBStore(KeyValueStore):
     def popitem(self):
         if len(self) == 0:
             raise KeyError('popitem(): dictionary is empty')
-        key = next(self._store.keys())
+        key = next(self.keys())
         return self.pop(key)
 
     def __len__(self):
@@ -95,15 +114,15 @@ class LevelDBStore(KeyValueStore):
             for i, (_, value) in enumerate(self._store):
                 if i == limit:
                     break
-                yield value
+                yield self.decode_value(value)
 
-    def update(self, d:dict):
+    def update(self, d: dict):
         wb = self._store.write_batch()
         count = 0
         for key, value in d.items():
             if key not in self:
                 count += 1
-            wb.put(key,value)
+            wb.put(self.encode_key(key), self.encode_value(value))
         wb.write()
         self._size += count
         return self
@@ -113,9 +132,7 @@ class LevelDBStore(KeyValueStore):
         for key, _ in self._store:
             wb.delete(key)
         wb.write()
-        self._size += 0
+        self._size = 0
 
     def __len__(self):
         return self._size
-
-
