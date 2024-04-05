@@ -36,6 +36,7 @@ modal = ["modal-client"]
 unqlite = ["unqlite"]
 rocksdb = ["rocksdict"]
 speedb = ["speedict"]
+json = ["filelock", "cloudpathlib"]
 
 [tool.setuptools]
 packages = ["spoonbill"]

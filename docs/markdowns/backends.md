@@ -20,6 +20,26 @@ store = InMemoryStore(defaultdict)
 store = InMemoryStore(OrderedDict)
 store = InMemoryStore(Counter)
 ```
+## JsonStore
+
+A simple json-file store where each call read and write a json file.   
+Not very effeicint for many calls but great for a small configuration singelton file.   
+Biggest benefit is that the file which is written is human-readable.
+
+* `lockfile_path` can be used as a locking mechanism. Requires `pip install filelock`.
+* `use_jsonpickle` can be use instead of pure json to handle more complicated objects like numpy arrays. Requires `pip install jsonpickle`
+* Cloud-native, if the path is `s3,gs,az`, it should still work.   
+  
+> ⚠️ The cloud native is un-tested.
+
+```python
+from spoonbill.datastores import JsonStore
+
+store = JsonStore.open(path='file.json', 
+                      strict=True, 
+                      lockfile_path=tmpdir.name+'file.lock',
+                      use_jsonpickle=True)
+```
 
 ## [LmdbStore](https://github.com/Dobatymo/lmdb-python-dbm)
 

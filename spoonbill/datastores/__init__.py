@@ -1,3 +1,4 @@
+# fmt: off
 import typing
 import contextlib
 import cloudpickle
@@ -188,13 +189,14 @@ class KeyValueStore(Strict):
         return self.pop(key)
 
     def update(self, d):
-        self._store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
+        self._store.update({self.encode_key(key): self.encode_value(
+            value) for key, value in d.items()})
         return self
 
     def __repr__(self):
         size = len(self)
         items = str({key: value for i, (key, value) in enumerate(self.items()) if i < 5})[
-                :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
+            :-1] + '...' if size > 5 else str({key: value for key, value in self.items()})
         return f"{self.__class__.__name__}() of size {size}\n{items}"
 
     def _from_directory(self, path):
@@ -305,12 +307,14 @@ class ContextStore(KeyValueStore, Strict):
 
     def update(self, d):
         with self.context as store:
-            store.update({self.encode_key(key): self.encode_value(value) for key, value in d.items()})
+            store.update({self.encode_key(key): self.encode_value(value)
+                         for key, value in d.items()})
         return self
 
     def _cp(self, source, target, **kwargs):
 
-        FileSystem(target).write_bytes(FileSystem(source, **kwargs).read_bytes())
+        FileSystem(target).write_bytes(
+            FileSystem(source, **kwargs).read_bytes())
 
         # save_bytes(target, load_bytes(source, **kwargs), **kwargs)
         return True
@@ -324,8 +328,10 @@ class ContextStore(KeyValueStore, Strict):
         return self
 
 
-from .inmemory import InMemoryStore
 from .shelve import ShelveStore
+from .inmemory import InMemoryStore
+from .jsonstore import JsonStore
+
 
 with contextlib.suppress(ImportError):
     from .redis import RedisStore
@@ -371,3 +377,4 @@ with contextlib.suppress(ImportError):
 
 with contextlib.suppress(ImportError):
     from .leveldb import LevelDBStore
+
