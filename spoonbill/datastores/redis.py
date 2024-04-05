@@ -3,7 +3,7 @@ import typing
 
 import redis
 
-from spoonbill.datastores import KeyValueStore, Strict
+from spoonbill.datastores.base import KeyValueStore, Strict
 
 REDIS_DEFAULT_HOST = 'localhost'
 REDIS_DEFAULT_PORT = 6379
@@ -74,10 +74,6 @@ class RedisStore(KeyValueStore, Strict):
 
     def set(self, key, value):
         return self._store.set(self.encode_key(key), self.encode_value(value))
-
-
-
-
 
     def update(self, d):
         pipeline = self._store.pipeline()
@@ -154,7 +150,8 @@ class RedisStore(KeyValueStore, Strict):
                         db: int = None, strict: bool = False, **kwargs):
 
         if db is None:
-            store = redis.Redis(host=host, port=port, db=0, decode_responses=True)
+            store = redis.Redis(host=host, port=port, db=0,
+                                decode_responses=True)
             db = len(RedisStore._databases_names(store))  # TODO test this
         kwargs['decode_responses'] = kwargs.get('decode_responses', True)
         return RedisStore(store=redis.Redis(host=host, port=port, db=db, **kwargs), strict=strict)

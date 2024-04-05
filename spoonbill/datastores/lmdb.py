@@ -1,9 +1,7 @@
-import contextlib
-
 import lmdbm
 import cloudpickle
 from lmdbm.lmdbm import remove_lmdbm
-from spoonbill.datastores import ContextStore
+from spoonbill.datastores.base import ContextStore
 from spoonbill.filesystem import FileSystem
 
 
@@ -47,7 +45,8 @@ class LmdbStore(ContextStore):
         self.store_path = path
         self.strict = strict
         self.as_string = False
-        self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
+        self.open_params = {"flag": flag, "mode": mode,
+                            "map_size": map_size, "autogrow": autogrow}
 
     @property
     def context(self):

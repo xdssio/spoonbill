@@ -1,5 +1,5 @@
 from tempfile import TemporaryDirectory
-from spoonbill.datastores import JsonStore
+from spoonbill.datastores.jsonstore import JsonStore
 import pytest
 
 

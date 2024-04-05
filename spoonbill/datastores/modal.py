@@ -1,4 +1,4 @@
-from spoonbill.datastores import KeyValueStore, VALUE, KEY
+from spoonbill.datastores.base import KeyValueStore, VALUE, KEY
 import modal
 import re
 

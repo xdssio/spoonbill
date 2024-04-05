@@ -33,7 +33,7 @@ Biggest benefit is that the file which is written is human-readable.
 > ⚠️ The cloud native is un-tested.
 
 ```python
-from spoonbill.datastores import JsonStore
+from spoonbill.datastores.jsonstore import JsonStore
 
 store = JsonStore.open(path='file.json', 
                       strict=True, 

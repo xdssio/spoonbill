@@ -1,4 +1,4 @@
-from spoonbill.datastores import ContextStore, VALUE
+from spoonbill.datastores.base import ContextStore
 from typing import Any, Dict, Optional
 from spoonbill.datastores.utils import get_pathlib
 import json

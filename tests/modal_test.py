@@ -1,4 +1,4 @@
-from spoonbill.datastores import ModalStore
+from spoonbill.datastores.modal import ModalStore
 import modal
 
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")
@@ -15,7 +15,8 @@ def modal_test(*args, **kwargs):
 
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(pattern='test')) == ['test']
     assert list(store.values(keys=['test'])) == ['test']
@@ -29,7 +30,8 @@ def modal_test(*args, **kwargs):
     assert store == {'test': 'test2', 'another': 'another2'}
 
     store['test'] = {'a': 1, 'b': 2}
-    assert list(store.items(conditions={'a': 1})) == [('test', {'a': 1, 'b': 2})]
+    assert list(store.items(conditions={'a': 1})) == [
+        ('test', {'a': 1, 'b': 2})]
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2
     print("All tests passed!")

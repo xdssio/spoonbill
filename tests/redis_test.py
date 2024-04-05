@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 import redis
 import pytest
 import pathlib
-from spoonbill.datastores import RedisStore
+from spoonbill.datastores.redis import RedisStore
 
 
 def test_redis_from_connection():
@@ -34,7 +34,8 @@ def test_redis_dict():
     store.set(1, 1)
     assert set(store.keys()) == set(['test', 'another', 1])
     assert set(store.values()) == set(['test', 'another', 1])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another'), (1, 1)])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another'), (1, 1)])
 
     assert list(store.keys('test')) == ['test']
     assert list(store.items('test')) == [('test', 'test')]
@@ -57,7 +58,8 @@ def test_redis_dict():
 
     store._flush()
     store.update({'1': 1, '11': 11, '2': 2, '3': 3, 1: -1, 11: -11})
-    assert set(store.scan('1*')) == set([('1', 1), ('11', 11)])  # scan only works with string keys
+    # scan only works with string keys
+    assert set(store.scan('1*')) == set([('1', 1), ('11', 11)])
     assert set(store.keys('1*')) == set(['1', '11'])
     store._flush()
 

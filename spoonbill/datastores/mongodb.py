@@ -1,5 +1,5 @@
 import re
-from spoonbill.datastores import KeyValueStore, VALUE, KEY
+from spoonbill.datastores.base import KeyValueStore, VALUE, KEY
 import pymongo
 import bson
 
@@ -17,7 +17,8 @@ class MongoDBStore(KeyValueStore):
                  index=KEY,
                  strict=True):
 
-        self.client = pymongo.MongoClient(uri) if uri else pymongo.MongoClient()
+        self.client = pymongo.MongoClient(
+            uri) if uri else pymongo.MongoClient()
         self.database = self.client[database]
         self.collection = None
         self.strict = strict
@@ -52,7 +53,8 @@ class MongoDBStore(KeyValueStore):
             return None
         key = self.decode_key(item.pop(self.index))
         _ = item.pop(ID, None)
-        value = item.get(VALUE) if isinstance(item, dict) and VALUE in item else item
+        value = item.get(VALUE) if isinstance(
+            item, dict) and VALUE in item else item
         value = self.decode_value(value)
         return key, value
 
@@ -126,7 +128,8 @@ class MongoDBStore(KeyValueStore):
             yield key, value
 
     def values(self, keys: dict = None, limit: int = None):
-        params = {ID: {'$in': [self.encode_key(key) for key in keys]}} if keys else {}
+        params = {ID: {'$in': [self.encode_key(key) for key in keys]}} if keys else {
+        }
         for item in self.collection.find(params):
             key, value = self._to_key_value(item)
             yield value

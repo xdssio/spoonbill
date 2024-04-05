@@ -1,4 +1,4 @@
-from spoonbill.datastores import KeyValueStore, KEY, VALUE
+from spoonbill.datastores.base import KeyValueStore, KEY, VALUE
 from typing import List
 import plyvel
 
@@ -92,7 +92,8 @@ class LevelDBStore(KeyValueStore):
 
     @classmethod
     def load(cls, path, ssts: List[str], **kwargs):
-        raise NotImplementedError('load() is not implemented for SpeedbStore - try using ingest() instead')
+        raise NotImplementedError(
+            'load() is not implemented for SpeedbStore - try using ingest() instead')
 
     def ingest(self, path: str):
         self._store.ingest_external_file([path])

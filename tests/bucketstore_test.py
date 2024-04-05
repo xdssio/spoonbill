@@ -1,9 +1,10 @@
 from tempfile import TemporaryDirectory
-from spoonbill.datastores import FilesystemStore, InMemoryStore
+from spoonbill.datastores.inmemory import InMemoryStore
+from spoonbill.datastores.filesystem import FilesystemStore
 import pytest
 
 
-def test_bucket_dict():
+def test_filesystem_dict():
     tmpdir = TemporaryDirectory()
     store = FilesystemStore.open(tmpdir.name)
     store._flush()
@@ -15,7 +16,8 @@ def test_bucket_dict():
 
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(pattern='test')) == ['test']
     assert list(store.items(conditions='test')) == [('test', 'test')]
@@ -37,7 +39,7 @@ def test_bucket_dict():
 
 
 @pytest.mark.skip("Run manually")
-def buclketdict_s3():
+def test_buclketdict_s3():
     path = 's3://xdss-tmp/tmp.db/'
     store = FilesystemStore.open(path)
     store._flush()
@@ -49,7 +51,8 @@ def buclketdict_s3():
 
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(pattern='test')) == ['test']
     assert list(store.values(keys=['test'])) == ['test']
@@ -63,7 +66,8 @@ def buclketdict_s3():
     assert store == {'test': 'test2', 'another': 'another2'}
 
     store['test'] = {'a': 1, 'b': 2}
-    assert list(store.items(conditions={'a': 1})) == [('test', {'a': 1, 'b': 2})]
+    assert list(store.items(conditions={'a': 1})) == [
+        ('test', {'a': 1, 'b': 2})]
     store['function'] = lambda x: x + 1
     assert store['function'](1) == 2
 

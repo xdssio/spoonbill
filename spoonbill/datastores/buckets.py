@@ -1,11 +1,7 @@
 import pathlib
-import re
 import shutil
-from spoonbill.datastores import KeyValueStore, VALUE
-
-
-def is_cloud_url(path):
-    return re.match("^s3:\/\/|^az:\/\/|^gs:\/\/", str(path)) is not None
+from spoonbill.datastores.base import KeyValueStore, VALUE
+from spoonbill.datastores.utils import is_cloud_url
 
 
 class BucketStore(KeyValueStore):
@@ -101,7 +97,8 @@ class BucketStore(KeyValueStore):
         self._put_item(key, value)
 
     def _iter_keys(self, pattern: str = None, limit: int = None):
-        iterator = self.bucket.glob(pattern) if pattern is not None else self.bucket.iterdir()
+        iterator = self.bucket.glob(
+            pattern) if pattern is not None else self.bucket.iterdir()
         for i, key in enumerate(iterator):
             if i == limit:
                 break

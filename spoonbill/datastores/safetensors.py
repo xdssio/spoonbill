@@ -1,6 +1,7 @@
 import contextlib
 
-from spoonbill.datastores import ContextStore, InMemoryStore, VALUE
+from spoonbill.datastores.base import ContextStore, VALUE
+from spoonbill.datastores.inmemory import InMemoryStore
 
 
 def get_framework_save_file(framework):
@@ -142,7 +143,8 @@ class SafetensorsStore(ContextStore):
             return store.get_slice(key)[slice]
 
     def save(self, path):
-        self._get_path(path).write_bytes(self._get_path(self.store_path).read_bytes())
+        self._get_path(path).write_bytes(
+            self._get_path(self.store_path).read_bytes())
 
     def load(self, path):
         self.store_path = path
@@ -179,8 +181,7 @@ class SafetensorsInMemoryStore(InMemoryStore):
 
 
 with contextlib.suppress(ImportError):
-    from spoonbill.datastores import LmdbStore
-
+    from spoonbill.datastores.lmdb import LmdbStore
 
     class SafetensorsLmdbStore(LmdbStore):
 
@@ -190,7 +191,8 @@ with contextlib.suppress(ImportError):
             self.store_path = path
             self.strict = False
             self.as_string = True
-            self.open_params = {"flag": flag, "mode": mode, "map_size": map_size, "autogrow": autogrow}
+            self.open_params = {"flag": flag, "mode": mode,
+                                "map_size": map_size, "autogrow": autogrow}
             self.framework = framework
             self.device = device
 

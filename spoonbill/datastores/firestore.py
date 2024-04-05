@@ -1,6 +1,4 @@
-import typing
-
-from spoonbill.datastores import KeyValueStore, VALUE, KEY
+from spoonbill.datastores.base import KeyValueStore, VALUE
 from google.cloud import firestore
 import re
 
@@ -59,7 +57,8 @@ class Firestore(KeyValueStore):
 
     def __len__(self):
         i = -1
-        for i, value in enumerate(self.collection.stream()): pass
+        for i, value in enumerate(self.collection.stream()):
+            pass
         return i + 1
 
     def __getitem__(self, item):

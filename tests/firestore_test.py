@@ -1,6 +1,8 @@
-from spoonbill.datastores import Firestore
+from spoonbill.datastores.firestore import Firestore
+import pytest
 
 
+@pytest.mark.xfail(reason="Cloud setup required - cuurently disabled. Run manually.")
 def test_firestore_non_strict():
     store = Firestore.open('tmp', strict=False)
     store._flush()
@@ -16,7 +18,8 @@ def test_firestore_non_strict():
 
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another')])
 
     assert store.pop('another') == 'another'
     assert len(store) == 1
@@ -34,6 +37,7 @@ def test_firestore_non_strict():
     store._flush()
 
 
+@pytest.mark.xfail(reason="Cloud setup required - cuurently disabled. Run manually.")
 def test_firestore_strict():
     store = Firestore.open('tmp', strict=True)
     store._flush()
@@ -49,7 +53,8 @@ def test_firestore_strict():
 
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(pattern='test')) == ['test']
     assert list(store.items(conditions='test')) == [('test', 'test')]
@@ -73,9 +78,13 @@ def test_firestore_strict():
     store._flush()
 
 
+@pytest.mark.xfail(reason="Cloud setup required - cuurently disabled. Run manually.")
 def test_firestore_search():
     store = Firestore.open(collection_name='tmp', strict=True)
     store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
-    assert list(store.items(conditions={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
-    assert set(store.keys(pattern='1+')) == {'13', '10', '14', '1', '11', '16', '17', '12', '15', '18', '19'}
-    assert list(store.values(keys=['10', '13'])) == [{'a': 10, 'b': '10'}, {'a': 13, 'b': '13'}]
+    assert list(store.items(conditions={'b': '1', 'a': 1})) == [
+        ('1', {'a': 1, 'b': '1'})]
+    assert set(store.keys(pattern='1+')
+               ) == {'13', '10', '14', '1', '11', '16', '17', '12', '15', '18', '19'}
+    assert list(store.values(keys=['10', '13'])) == [
+        {'a': 10, 'b': '10'}, {'a': 13, 'b': '13'}]

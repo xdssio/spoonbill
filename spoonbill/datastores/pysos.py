@@ -1,8 +1,7 @@
 import os
-import cloudpickle
 import pysos
 
-from spoonbill.datastores import KeyValueStore
+from spoonbill.datastores.base import KeyValueStore
 
 
 class PysosStore(KeyValueStore):

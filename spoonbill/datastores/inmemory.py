@@ -1,10 +1,5 @@
 import json
-import pathlib
-import re
-from typing import Sequence
-
-import cloudpickle
-from spoonbill.datastores import KeyValueStore, KEY, VALUE
+from spoonbill.datastores.base import KeyValueStore
 
 
 class InMemoryStore(KeyValueStore):

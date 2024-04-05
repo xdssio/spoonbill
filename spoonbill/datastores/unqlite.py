@@ -1,11 +1,8 @@
 import contextlib
 import json
-import pickle
-import struct
-
 import cloudpickle
 
-from spoonbill.datastores import KeyValueStore, KEY, VALUE
+from spoonbill.datastores.base import KeyValueStore
 from unqlite import UnQLite
 
 
@@ -96,5 +93,4 @@ class UnQLiteStore(KeyValueStore):
             return value
 
     def _is_encoded(self, value):
-        return  str(value)[:3] in ('b"\\', "b'\\", 'b"b', "b'b", 'b"b', "b'b")
-
+        return str(value)[:3] in ('b"\\', "b'\\", 'b"b', "b'b", 'b"b', "b'b")

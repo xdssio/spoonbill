@@ -1,5 +1,4 @@
-from spoonbill.datastores import CosmosDBStore
-import time
+from spoonbill.datastores.cosmos import CosmosDBStore
 import pytest
 
 
@@ -20,7 +19,8 @@ def test_cosmos_strict():
 
     assert set(store.keys()) == set(['test', 'another'])
     assert set(store.values()) == set(['test', 'another'])
-    assert set(store.items()) == set([('test', 'test'), ('another', 'another')])
+    assert set(store.items()) == set(
+        [('test', 'test'), ('another', 'another')])
 
     assert list(store.keys(pattern='test')) == ['test']
     assert list(store.items(conditions='test')) == [('test', 'test')]
@@ -53,6 +53,9 @@ def test_cosmos_search():
     store._flush()
     store.update({str(i): {'a': i, 'b': str(i)} for i in range(22)})
 
-    assert list(store.items(conditions={'b': '1', 'a': 1})) == [('1', {'a': 1, 'b': '1'})]
-    assert list(store.keys(pattern='1%')) == ['1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '21']
-    assert list(store.values(keys=['10', '13'])) == [{'a': 10, 'b': '10'}, {'a': 13, 'b': '13'}]
+    assert list(store.items(conditions={'b': '1', 'a': 1})) == [
+        ('1', {'a': 1, 'b': '1'})]
+    assert list(store.keys(pattern='1%')) == [
+        '1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '21']
+    assert list(store.values(keys=['10', '13'])) == [
+        {'a': 10, 'b': '10'}, {'a': 13, 'b': '13'}]

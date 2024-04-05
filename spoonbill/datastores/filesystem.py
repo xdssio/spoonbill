@@ -1,7 +1,6 @@
-from spoonbill.datastores import KeyValueStore, InMemoryStore
-from fsspec import AbstractFileSystem, get_filesystem_class
-from fsspec.implementations.cached import SimpleCacheFileSystem
-import typing
+from spoonbill.datastores.base import KeyValueStore
+from spoonbill.datastores.inmemory import InMemoryStore
+
 import fsspec
 
 import cloudpickle

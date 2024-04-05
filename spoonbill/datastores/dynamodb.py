@@ -2,7 +2,7 @@ import typing
 import logging
 import warnings
 
-from spoonbill.datastores import KeyValueStore, KEY, VALUE
+from spoonbill.datastores.base import KeyValueStore, KEY, VALUE
 import boto3
 import decimal
 import botocore
@@ -52,10 +52,12 @@ class DynamoDBStore(KeyValueStore):
         table_name = table_name or self.table_name
 
         if not table_name in self._list_tables():
-            key_schema = key_schema or kwargs.pop('AttributeDefinitions', [{'AttributeName': self.key, 'KeyType': 'HASH'}])
+            key_schema = key_schema or kwargs.pop(
+                'AttributeDefinitions', [{'AttributeName': self.key, 'KeyType': 'HASH'}])
             attribute_definitions = attribute_definitions or kwargs.pop('AttributeDefinitions', [
                 {'AttributeName': self.key, 'AttributeType': self.key_type}])
-            billing_mode = billing_mode or kwargs.pop('BillingMode', 'PAY_PER_REQUEST')
+            billing_mode = billing_mode or kwargs.pop(
+                'BillingMode', 'PAY_PER_REQUEST')
             return self.client.create_table(TableName=table_name, KeySchema=key_schema,
                                             AttributeDefinitions=attribute_definitions,
                                             BillingMode=billing_mode,
@@ -109,15 +111,18 @@ class DynamoDBStore(KeyValueStore):
         return key, self._process_item(item)
 
     def _get_item(self, key: str):
-        response = self.table.get_item(TableName=self.table_name, Key=self._to_key(key))
+        response = self.table.get_item(
+            TableName=self.table_name, Key=self._to_key(key))
         if ITEM in response:
             return self._to_key_value(response[ITEM])
 
     def _put_item(self, key: str, value: str):
-        self.table.put_item(TableName=self.table_name, Item=self._to_item(key, value))
+        self.table.put_item(TableName=self.table_name,
+                            Item=self._to_item(key, value))
 
     def _delete_item(self, key: str):
-        self.table.delete_item(TableName=self.table_name, Key=self._to_key(key))
+        self.table.delete_item(TableName=self.table_name,
+                               Key=self._to_key(key))
 
     @property
     def description(self):
@@ -204,7 +209,8 @@ class DynamoDBStore(KeyValueStore):
 
     def keys(self, pattern: str = None, limit: int = None):
         is_valid = self._to_filter(KEY, pattern) if pattern else lambda x: True
-        params = {'TableName': self.table_name, 'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
+        params = {'TableName': self.table_name,
+                  'Select': 'SPECIFIC_ATTRIBUTES', 'AttributesToGet': [KEY]}
         i = 0
         for key, value in self._table_scan(params):
             if i == limit:

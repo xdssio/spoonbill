@@ -195,7 +195,7 @@ Biggest benefit is that the file which is written is human-readable.
 > ⚠️ The cloud native is un-tested.
 
 ```python
-from spoonbill.datastores import JsonStore
+from spoonbill.datastores.jsonstore import JsonStore
 
 store = JsonStore.open(path='file.json', 
                       strict=True, 
@@ -216,7 +216,7 @@ Requirements:
 ```pip install lmdbm```
 
 ```python
-from spoonbill.datastores import LmdbStore
+from spoonbill.datastores.lmdb import LmdbStore
 
 store = LmdbStore.open('tmp.db')
 ```
@@ -240,7 +240,7 @@ Requirements:
 ```pip install pysos```
 
 ```python
-from spoonbill.datastores import PysosStore
+from spoonbill.datastores.pysos import PysosStore
 
 store = PysosStore.open('tmp.db')
 ```
@@ -252,7 +252,7 @@ objects — anything that the pickle module can handle. This includes most class
 objects containing lots of shared sub-objects. The keys are ordinary strings.
 
 ```python
-from spoonbill.datastores import ShelveStore
+from spoonbill.datastores.shelve import ShelveStore
 
 store = ShelveStore.open('tmp.db')
 ```
@@ -317,7 +317,7 @@ For faster applications with cloud persistence, you can use InMemoryStore/LmdbSt
 updates.
 
 ```python
-from spoonbill.datastores import FilesystemStore
+from spoonbill.datastores.filesystem import FilesystemStore
 
 # set strict to True to use redis with its default behaviour which turns keys and values to strings
 store = FilesystemStore.open("s3://bucket/path/to/store")
@@ -337,7 +337,7 @@ Requirements:
 ```pip install redis```
 
 ```python
-from spoonbill.datastores import RedisStore
+from spoonbill.datastores.redis import RedisStore
 
 # set strict to True to use redis with its default behaviour which turns keys and values to strings
 store = RedisStore.open("redis://localhost:6379/1")
@@ -363,7 +363,7 @@ Recommended using with `strict=True` to enjoy all the benefits of backends inclu
 Searches API Example:
 
 ```python
-from spoonbill.datastores import MongoDBStore
+from spoonbill.datastores.mongodb import MongoDBStore
 
 store = MongoDBStore()
 store.keys(pattern="*", limit=10)  # scan keys to a pattern
@@ -379,7 +379,7 @@ Requirements:
 ```pip install pymongo```
 
 ```python
-from spoonbill.datastores import MongoDBStore
+from spoonbill.datastores.dynamodb import DynamoDBStore
 
 store = MongoDBStore.open(uri='mongodb://localhost:27017/')
 ```
@@ -421,7 +421,7 @@ pip install --upgrade google-cloud-firestore
 ```
 
 ```python
-from spoonbill.datastores import Firestore
+from spoonbill.datastores.firestore import Firestore
 
 # this rest of the credentials are picked up from the file in the GOOGLE_APPLICATION_CREDENTIALS environment variable
 store = Firestore.open(table_name="my-collection")
@@ -443,7 +443,7 @@ Requirements:
 ```pip install azure-cosmos```
 
 ```python
-from spoonbill.datastores import CosmosDBStore
+from spoonbill.datastores.cosmos import CosmosDBStore
 
 store = CosmosDBStore.open(database='db',
                            container='container',
@@ -480,7 +480,7 @@ Within a function, only the **name** of the dict is needed.
 
 ```python 
 import modal
-from spoonbill.datastores import ModalStore
+from spoonbill.datastores.modal import ModalStore
 
 image = modal.Image.debian_slim().pip_install("spoonbill-framework")
 
@@ -515,7 +515,7 @@ Requirements:
 ```pip install unqlite```
 
 ```python
-from spoonbill.datastores import UnQLiteStore
+from spoonbill.datastores.unqlite import UnQLiteStore
 
 store = UnQLiteStore.open('tmp.db')  # leave empty for in-memory
 ```
@@ -536,7 +536,7 @@ and improve performance for any use case.
   ```pip install speedict```
 
 ```python
-from spoonbill.datastores import SpeedbStore
+from spoonbill.datastores.speedb import SpeedbStore
 
 store = SpeedbStore.open('directory/')
 
@@ -566,7 +566,7 @@ multi-threaded compactions, making it especially suitable for storing multiple t
   ```pip install rocksdict```
 
 ```python
-from spoonbill.datastores import RocksDBStore
+from spoonbill.datastores.rocksdb import RocksDBStore
 
 store = RocksDBStore.open('directory/')
 
@@ -597,7 +597,7 @@ pip install plyvel-ci
 ```
 
 ```python
-from spoonbill.datastores import LevelDBStore
+from spoonbill.datastores.leveldb import LevelDBStore
 
 store = LevelDBStore.open('directory/')
 

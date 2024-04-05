@@ -1,6 +1,6 @@
 import os
 import contextlib
-from spoonbill.datastores import KeyValueStore, VALUE
+from spoonbill.datastores.base import KeyValueStore, VALUE
 from azure.cosmos import CosmosClient, PartitionKey
 import azure.cosmos.exceptions
 import json
@@ -25,7 +25,8 @@ class CosmosDBStore(KeyValueStore):
         self.client = CosmosClient(url=endpoint or os.getenv('COSMOS_ENDPOINT'),
                                    credential=credential or os.getenv('COSMOS_KEY'))
         self.database_name = database
-        self.database = self.client.create_database_if_not_exists(id=self.database_name)
+        self.database = self.client.create_database_if_not_exists(
+            id=self.database_name)
         self.container = self.database.create_container_if_not_exists(
             id=container, partition_key=PartitionKey(path=partition_key), offer_throughput=400)
         self.strict = strict
@@ -55,7 +56,8 @@ class CosmosDBStore(KeyValueStore):
             if VALUE in item:
                 value = self.decode_value(item[VALUE])
             else:
-                value = {k: v for k, v in item.items() if not str(k).startswith('_')}
+                value = {k: v for k, v in item.items(
+                ) if not str(k).startswith('_')}
             key = self.decode_key(key)
             return key, value
 
@@ -111,7 +113,8 @@ class CosmosDBStore(KeyValueStore):
             if isinstance(pattern, str):
                 wheres.append('c.{} LIKE "%{}%"'.format(feature, pattern))
             else:
-                wheres.append(f'c.{feature} = {pattern}'.format(feature, pattern))
+                wheres.append(
+                    f'c.{feature} = {pattern}'.format(feature, pattern))
         query = f"SELECT * FROM {self.container.id} c"
         if wheres:
             query = query + ' WHERE ' + ' AND '.join(wheres)
@@ -136,7 +139,8 @@ class CosmosDBStore(KeyValueStore):
             yield self._to_key_value(item)
 
     def keys(self, pattern: str = None, limit: int = None):
-        where = ' WHERE ' + 'c.id LIKE "%{}%"'.format(pattern) if pattern else None
+        where = ' WHERE ' + \
+            'c.id LIKE "%{}%"'.format(pattern) if pattern else None
         for item in self._iter_keys(where=where, limit=limit):
             yield item[0]
 
